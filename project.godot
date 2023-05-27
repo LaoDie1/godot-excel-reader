@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="excel_reader"
+config/name="godot-excel-reader"
 config/features=PackedStringArray("4.0", "Forward Plus")
 config/icon="res://icon.svg"
 

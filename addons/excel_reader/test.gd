@@ -18,6 +18,10 @@ func _run():
 #	var sheet = workbook.get_sheet("sheet1") as ExcelSheet
 	
 	var table_data = sheet.get_table_data()
+	for row in table_data:
+		var column_data = table_data[row]
+		for column in column_data:
+			print(column_data[column])
 	
 	print(JSON.stringify(table_data, "\t"))
 
