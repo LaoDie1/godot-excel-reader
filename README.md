@@ -13,7 +13,7 @@ Reading excel files. For now, only xlsx files can be read.
 
 
 
-### 使用示例：
+### Example：
 
 ```gdscript
 var excel = ExcelFile.open_file("xlsx file path")
