@@ -25,13 +25,13 @@ func _notification(what):
 #============================================================
 static func open_file(path: String, auto_close: bool = false) -> ExcelFile:
 	if FileAccess.file_exists(path):
-		var excel_reader = ExcelFile.new()
-		excel_reader.open(path)
+		var excel_file = ExcelFile.new()
+		excel_file.open(path)
 		if auto_close:
 			Engine.get_main_loop() \
 				.process_frame \
-				.connect(excel_reader.close, Object.CONNECT_ONE_SHOT)
-		return excel_reader
+				.connect(excel_file.close, Object.CONNECT_ONE_SHOT)
+		return excel_file
 	return null
 
 
