@@ -17,8 +17,7 @@ var workbook: ExcelWorkbook
 #============================================================
 func _notification(what):
 	if what == NOTIFICATION_PREDELETE:
-		if zip_reader:
-			zip_reader.close()
+		close()
 
 
 #============================================================
@@ -29,12 +28,9 @@ static func open_file(path: String, auto_close: bool = false) -> ExcelFile:
 		var excel_reader = ExcelFile.new()
 		excel_reader.open(path)
 		if auto_close:
-			Engine.get_main_loop().process_frame.connect(func():
-				if excel_reader.zip_reader:
-					excel_reader.zip_reader.close()
-					excel_reader.zip_reader = null
-			, Object.CONNECT_ONE_SHOT)
-		
+			Engine.get_main_loop() \
+				.process_frame \
+				.connect(excel_reader.close, Object.CONNECT_ONE_SHOT)
 		return excel_reader
 	return null
 
