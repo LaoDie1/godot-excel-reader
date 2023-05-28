@@ -24,7 +24,7 @@ func _init(zip_reader: ZIPReader, sheet_xml_path: String, data_value_list: Array
 
 
 func _to_string():
-	return "<%s:%s>" % ["Sheet", get_instance_id()]
+	return "<%s#%s>" % ["Sheet", get_instance_id()]
 
 
 #============================================================

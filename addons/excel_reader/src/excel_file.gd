@@ -22,6 +22,10 @@ func _notification(what):
 			zip_reader = null
 
 
+func _to_string():
+	return "<%s#%s>" % ["ExcelFile", get_instance_id()]
+
+
 #============================================================
 #  自定义
 #============================================================
