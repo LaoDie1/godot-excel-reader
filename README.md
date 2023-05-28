@@ -15,7 +15,7 @@ Reading excel files.
 
 
 
-### Example：
+## Example
 
 ```gdscript
 var excel = ExcelFile.open_file("xlsx file path")
