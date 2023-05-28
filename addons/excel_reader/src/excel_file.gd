@@ -17,7 +17,9 @@ var workbook: ExcelWorkbook
 #============================================================
 func _notification(what):
 	if what == NOTIFICATION_PREDELETE:
-		close()
+		if zip_reader:
+			zip_reader.close()
+			zip_reader = null
 
 
 #============================================================
