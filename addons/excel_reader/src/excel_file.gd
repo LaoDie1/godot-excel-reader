@@ -8,12 +8,8 @@
 class_name ExcelFile
 
 
-var workbook: ExcelWorkbook:
-	set(v):
-		assert(workbook == null)
-		workbook = v
-
 var _zip_reader : ZIPReader
+var _workbook: ExcelWorkbook
 
 
 #============================================================
@@ -61,12 +57,12 @@ func open(path: String) -> Error:
 		print("Open failed: ", error_string(err))
 		return err
 	
-	workbook = ExcelWorkbook.new(_zip_reader, "xl/workbook.xml")
+	_workbook = ExcelWorkbook.new(_zip_reader, "xl/_workbook.xml")
 	
 	return OK
 
 
 func get_workbook() -> ExcelWorkbook:
-	return workbook
+	return _workbook
 
 
