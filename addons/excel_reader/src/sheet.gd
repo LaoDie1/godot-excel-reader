@@ -9,7 +9,10 @@ class_name ExcelSheet
 
 
 var reg : RegEx = RegEx.new()
-var xml_data : ExcelXMLData
+var xml_data : ExcelXMLData:
+	set(v):
+		assert(xml_data == null)
+		xml_data = v
 
 var _data_value_list : Array = []
 

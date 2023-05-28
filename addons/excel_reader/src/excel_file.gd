@@ -8,8 +8,12 @@
 class_name ExcelFile
 
 
-var zip_reader : ZIPReader
-var workbook: ExcelWorkbook
+var workbook: ExcelWorkbook:
+	set(v):
+		assert(workbook == null)
+		workbook = v
+
+var _zip_reader : ZIPReader
 
 
 #============================================================
@@ -17,9 +21,9 @@ var workbook: ExcelWorkbook
 #============================================================
 func _notification(what):
 	if what == NOTIFICATION_PREDELETE:
-		if zip_reader:
-			zip_reader.close()
-			zip_reader = null
+		if _zip_reader:
+			_zip_reader.close()
+			_zip_reader = null
 
 
 func _to_string():
@@ -42,22 +46,22 @@ static func open_file(path: String, auto_close: bool = false) -> ExcelFile:
 
 
 func close() -> void:
-	if zip_reader:
-		zip_reader.close()
-		zip_reader = null
+	if _zip_reader:
+		_zip_reader.close()
+		_zip_reader = null
 
 
 func open(path: String) -> Error:
-	if zip_reader != null:
-		zip_reader.close()
-	zip_reader = ZIPReader.new()
+	if _zip_reader != null:
+		_zip_reader.close()
+	_zip_reader = ZIPReader.new()
 	
-	var err = zip_reader.open(path)
+	var err = _zip_reader.open(path)
 	if err != OK:
 		print("Open failed: ", error_string(err))
 		return err
 	
-	workbook = ExcelWorkbook.new(zip_reader, "xl/workbook.xml")
+	workbook = ExcelWorkbook.new(_zip_reader, "xl/workbook.xml")
 	
 	return OK
 
