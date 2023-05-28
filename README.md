@@ -35,3 +35,8 @@ for row in table_data:
 		print(column_data[column])
 ```
 
+
+
+## Contribute
+
+Any contributions is welcome! If you find any bugs, please report in `issues`.
