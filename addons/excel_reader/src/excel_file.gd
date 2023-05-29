@@ -57,7 +57,7 @@ func open(path: String) -> Error:
 		print("Open failed: ", error_string(err))
 		return err
 	
-	_workbook = ExcelWorkbook.new(_zip_reader, "xl/_workbook.xml")
+	_workbook = ExcelWorkbook.new(_zip_reader)
 	
 	return OK
 

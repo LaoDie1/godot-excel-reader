@@ -22,9 +22,10 @@ var _data_value_list : Array = []
 #============================================================
 #  内置
 #============================================================
-func _init(zip_reader: ZIPReader, sheet_xml_path: String):
+func _init(zip_reader: ZIPReader):
 	self._zip_reader = zip_reader
-	self.xml_data = ExcelXMLData.new(_zip_reader, sheet_xml_path)
+	var workbook_path = "xl/workbook.xml"
+	self.xml_data = ExcelXMLData.new(_zip_reader, workbook_path)
 	
 	# 表单文件列表
 	for file in _zip_reader.get_files():
