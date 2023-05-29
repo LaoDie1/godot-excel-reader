@@ -11,7 +11,6 @@ class_name ExcelXMLData
 var _root : ExcelXMLNode
 var _source_code : String = "":
 	set(v):
-		assert(v != "", "Source code error")
 		_source_code = v
 		_source_code_buffer = v.to_utf8_buffer()
 var _source_code_buffer : PackedByteArray
@@ -28,7 +27,6 @@ func _init(zip_reader: ZIPReader, xml_path: String):
 	var res := zip_reader.read_file(xml_path)
 	var stack = []
 	_source_code = PackedByteArray(res).get_string_from_utf8()
-	_source_code = _source_code.replace("\n", " ")
 	var parser = XMLParser.new()
 	if parser.open_buffer(_source_code_buffer) == OK:
 		# 第一个节点

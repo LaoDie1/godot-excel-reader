@@ -9,7 +9,7 @@
 extends EditorScript
 
 
-var excel = ExcelFile.open_file("C:\\Users\\z\\Desktop\\role_data.xlsx")
+var excel = ExcelFile.open_file("C:\\Users\\Administrator\\Downloads\\user.xlsx")
 
 
 func _run():

@@ -28,7 +28,7 @@ func _init(zip_reader: ZIPReader, sheet_xml_path: String):
 	
 	# 表单文件列表
 	for file in _zip_reader.get_files():
-		if file.begins_with("xl/worksheets/"):
+		if file.begins_with("xl/worksheets/") and file.ends_with(".xml"):
 			_sheet_files.append(file)
 	self._sheet_files.erase("xl/worksheets/")
 	
