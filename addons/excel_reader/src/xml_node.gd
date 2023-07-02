@@ -108,15 +108,15 @@ func get_child_count() -> int:
 	return _children.size()
 
 
-func get_first_node(path: String) -> ExcelXMLNode:
+func find_first_node(path: String) -> ExcelXMLNode:
 	var list = path.split("/")
-	var node = find_first_node(list[0])
+	var node = find_first_child_node(list[0])
 	if node and list.size() > 1:
-		return node.get_first_node("/".join(list.slice(1)))
+		return node.find_first_node("/".join(list.slice(1)))
 	return node
 
 
-func find_first_node(_type: String) -> ExcelXMLNode:
+func find_first_child_node(_type: String) -> ExcelXMLNode:
 	for child in get_children():
 		if child._type == _type:
 			return child

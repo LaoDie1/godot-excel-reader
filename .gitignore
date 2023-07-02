@@ -1,3 +1,4 @@
 # Godot 4+ specific ignores
 .godot/
 addons/script_comment_menu/
+test/

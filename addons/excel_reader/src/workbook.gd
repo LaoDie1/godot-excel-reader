@@ -12,10 +12,38 @@ var xml_data : ExcelXMLData:
 	set(v):
 		assert(xml_data == null)
 		xml_data = v
+var shared_strings : Array = []
+var cellimages : Dictionary = {}: # name to image map
+	get:
+		if cellimages.is_empty():
+			# 读取 rid 对应的图片
+			var rels_cellimages_xml_data = ExcelXMLData.new(_zip_reader, "xl/_rels/cellimages.xml.rels")
+			var rid_to_images = {}
+			for child in rels_cellimages_xml_data.get_root().get_children():
+				var rid = child.get_attr("Id")
+				var path = child.get_attr("Target")
+				rid_to_images[rid] = _zip_reader.read_file("xl".path_join(path))
+			
+			# 读取数据引用
+			var cellimages_xml_data = ExcelXMLData.new(_zip_reader, "xl/cellimages.xml")
+			for child in cellimages_xml_data.get_root().get_children():
+				# 名称
+				var xdr_pic = child.get_child(0)
+				var xdr_nv_pic_pr = xdr_pic.find_first_child_node("xdr:nvPicPr")
+				var xdr_cNvPr = xdr_nv_pic_pr.find_first_child_node("xdr:cNvPr")
+				var name = xdr_cNvPr.get_attr("name")
+				# rid
+				var xdr_blip_fill = xdr_pic.find_first_child_node("xdr:blipFill")
+				var a_blip = xdr_blip_fill.find_first_child_node("a:blip")
+				var rid = a_blip.get_attr("r:embed")
+				# 记录
+				var image = Image.new()
+				image.load_png_from_buffer(PackedByteArray(rid_to_images[rid]))
+				cellimages[name] = image
+		return cellimages
 
 var _zip_reader : ZIPReader
 var _sheets : Dictionary = {}
-var _data_value_list : Array = []
 var _sheet_data_list : Array[Dictionary] = []
 
 var _rels : ExcelXMLData  # rid data
@@ -37,7 +65,7 @@ func _init(zip_reader: ZIPReader):
 		self._rid_to_path_map[id] = target_path
 	
 	# Sheets 
-	var sheets = xml_data.get_root().get_first_node("sheets")
+	var sheets = xml_data.get_root().find_first_node("sheets")
 	var rid : String
 	var sheet_name : String
 	for child in sheets.get_children():
@@ -54,19 +82,18 @@ func _init(zip_reader: ZIPReader):
 	for si_node in sharedStrings.get_root().get_children():
 		if si_node.get_child_count() > 0:
 			var t_node = si_node.get_child(0)
-			_data_value_list.append(t_node.get_value())
+			shared_strings.append(t_node.get_value())
 
 
 func _to_string():
 	return "<%s#%s>" % ["Workbook", get_instance_id()]
 
 
-
 #============================================================
 #  自定义
 #============================================================
 func _create_sheet(xml_path: String) -> ExcelSheet:
-	return ExcelSheet.new(_zip_reader, "xl".path_join(xml_path), _data_value_list)
+	return ExcelSheet.new(_zip_reader, self,  "xl".path_join(xml_path))
 
 
 func get_sheet_files() -> Array[String]:
