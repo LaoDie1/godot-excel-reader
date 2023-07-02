@@ -39,7 +39,7 @@ var cellimages : Dictionary = {}: # name to image map
 				# 记录
 				var image = Image.new()
 				image.load_png_from_buffer(PackedByteArray(rid_to_images[rid]))
-				cellimages[name] = image
+				cellimages[name] = ImageTexture.create_from_image(image)
 		return cellimages
 
 var _zip_reader : ZIPReader
