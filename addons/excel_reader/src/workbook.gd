@@ -80,9 +80,7 @@ func _init(zip_reader: ZIPReader):
 	# 获取值列表，string 类型单元格数据的缓存（共享的字符串）
 	var sharedStrings = ExcelXMLData.new(_zip_reader, "xl/sharedStrings.xml")
 	for si_node in sharedStrings.get_root().get_children():
-		if si_node.get_child_count() > 0:
-			var t_node = si_node.get_child(0)
-			shared_strings.append(t_node.get_value())
+		shared_strings.append(si_node.get_full_value())
 
 
 func _to_string():

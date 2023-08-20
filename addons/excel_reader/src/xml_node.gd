@@ -132,4 +132,10 @@ func find_nodes(_type: String) -> Array[ExcelXMLNode]:
 func get_value():
 	return value
 
-
+func get_full_value():
+	if value != "":
+		return value
+	var ret: String = ""
+	for child in get_children():
+		ret += child.get_full_value()
+	return ret
