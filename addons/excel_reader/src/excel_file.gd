@@ -8,11 +8,9 @@
 class_name ExcelFile
 
 
-
 var file_path: String
-
-var _zip_reader : ZIPReader
-var _workbook: ExcelWorkbook
+var zip_reader : ZIPReader
+var workbook: ExcelWorkbook
 
 
 #============================================================
@@ -20,9 +18,9 @@ var _workbook: ExcelWorkbook
 #============================================================
 func _notification(what):
 	if what == NOTIFICATION_PREDELETE:
-		if _zip_reader:
-			_zip_reader.close()
-			_zip_reader = null
+		if zip_reader:
+			zip_reader.close()
+			zip_reader = null
 
 
 func _to_string():
@@ -46,28 +44,47 @@ static func open_file(path: String, auto_close: bool = false) -> ExcelFile:
 
 func open(path: String) -> Error:
 	self.file_path = path
-	if _zip_reader != null:
+	if zip_reader != null:
 		close()
-	_zip_reader = ZIPReader.new()
+	zip_reader = ZIPReader.new()
 	
-	var err = _zip_reader.open(path)
+	var err = zip_reader.open(path)
 	if err != OK:
 		print("Open failed: ", error_string(err))
 		return err
 	
-	_workbook = ExcelWorkbook.new(_zip_reader)
-	_workbook.file_path = path
+	workbook = ExcelWorkbook.new(zip_reader)
+	workbook.file_path = path
 	
 	return OK
 
 
 func close() -> void:
-	if _zip_reader:
-		_zip_reader.close()
-		_zip_reader = null
+	if zip_reader:
+		zip_reader.close()
+		zip_reader = null
 
 
 func get_workbook() -> ExcelWorkbook:
-	return _workbook
+	return workbook
+
+
+func save(path: String = ""):
+	if path == "":
+		path = self.file_path
+	var writer := ZIPPacker.new()
+	var err := writer.open(path)
+	if err != OK:
+		return err
+	
+	# 写入数据
+	var file_data_map = workbook.get_path_to_file_dict()
+	for file in file_data_map:
+		writer.start_file(file)
+		writer.write_file(file_data_map[file])
+	
+	writer.close_file()
+	writer.close()
+	return OK
 
 

@@ -255,5 +255,6 @@ func alter(row: int, column: int, value) -> void:
 
 func save():
 	var new_file_path = workbook.file_path.get_basename() + "_.xlsx"
-	var result = xml_file.save_as( new_file_path )
+	var result = xml_file.update()
+	workbook.save()
 	print(  error_string(result)  )

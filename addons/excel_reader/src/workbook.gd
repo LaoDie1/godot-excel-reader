@@ -13,10 +13,6 @@ const PATH_XML_SHEET = "xl/worksheets/"
 
 var file_path: String
 var zip_reader : ZIPReader
-var _workbook_xml_file : ExcelXMLFile:
-	set(v):
-		assert(_workbook_xml_file == null)
-		_workbook_xml_file = v
 var shared_strings : Array = []
 var cellimages : Dictionary = {}: # name to image map
 	get:
@@ -47,8 +43,8 @@ var cellimages : Dictionary = {}: # name to image map
 				cellimages[name] = ImageTexture.create_from_image(image)
 		return cellimages
 
-var _sheets : Dictionary = {}
-var _sheet_files : Array[String] = []
+var _path_to_file_data_dict : Dictionary = {}
+var _path_to_sheet_dict : Dictionary = {}
 var _string_value_cache : Array = []
 var _sheet_data_list : Array[Dictionary] = []
 
@@ -61,8 +57,11 @@ var _rid_to_path_map : Dictionary = {}
 #============================================================
 func _init(zip_reader: ZIPReader):
 	self.zip_reader = zip_reader
-	self._workbook_xml_file = get_xml_file("xl/workbook.xml")
 	self._rels = get_xml_file("xl/_rels/workbook.xml.rels")
+	
+	# Files
+	for path in zip_reader.get_files():
+		_path_to_file_data_dict[path] = zip_reader.read_file(path)
 	
 	# RID file path
 	for child in _rels.get_root().get_children():
@@ -71,7 +70,9 @@ func _init(zip_reader: ZIPReader):
 		self._rid_to_path_map[id] = target_path
 	
 	# Sheets 
-	var sheets = _workbook_xml_file.get_root().find_first_node("sheets")
+	var sheets = get_xml_file("xl/workbook.xml") \
+		.get_root() \
+		.find_first_node("sheets")
 	var rid : String
 	var sheet_name : String
 	for child in sheets.get_children():
@@ -82,12 +83,6 @@ func _init(zip_reader: ZIPReader):
 			"sheet_name": sheet_name,
 			"path": _rid_to_path_map[rid],
 		})
-	
-	# 表单文件列表
-	for file in zip_reader.get_files():
-		if file.begins_with(PATH_XML_SHEET) and file.ends_with(".xml"):
-			_sheet_files.append(file)
-	self._sheet_files.erase(PATH_XML_SHEET)
 	
 	# 获取值列表，string 类型单元格数据的缓存
 	var sharedStrings = get_xml_file("xl/sharedStrings.xml")
@@ -114,19 +109,15 @@ func get_sheet_files() -> Array[String]:
 		return item["path"]
 	), TYPE_STRING, &"", null)
 
-func get_sheet_name_list() -> Array[String]:
-	var sheets = _workbook_xml_file \
-		.find_first_node("workbook/_sheets") \
-		.get_children() \
-		.map( func(item: ExcelXMLNode): return item.get_attr("name") )
-	return Array(sheets, TYPE_STRING, "", null)
-
+func get_path_to_file_dict() -> Dictionary:
+	return _path_to_file_data_dict
 
 func get_sheets() -> Array[ExcelSheet]:
-	if _sheets.is_empty():
-		for xml_path in _sheet_files:
-			_sheets[xml_path] = _get_sheet(xml_path)
-	return Array(_sheets.values(), TYPE_OBJECT, "RefCounted", ExcelSheet)
+	if _path_to_sheet_dict.is_empty():
+		for data in _sheet_data_list:
+			var xml_path = data["path"]
+			_path_to_sheet_dict[xml_path] = _get_sheet(xml_path)
+	return Array(_path_to_sheet_dict.values(), TYPE_OBJECT, "RefCounted", ExcelSheet)
 
 
 func get_path_by_sheet_name(sheet_name: String) -> String:
@@ -151,8 +142,8 @@ func get_sheet(idx_or_name) -> ExcelSheet:
 		return null
 	
 	# 还没加载这个数据则进行加载
-	if not _sheets.has(xml_path):
-		_sheets[xml_path] = _get_sheet(xml_path)
+	if not _path_to_sheet_dict.has(xml_path):
+		_path_to_sheet_dict[xml_path] = _get_sheet(xml_path)
 	
-	return _sheets[xml_path]
+	return _path_to_sheet_dict[xml_path]
 
