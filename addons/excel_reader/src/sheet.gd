@@ -9,14 +9,15 @@ class_name ExcelSheet
 
 
 var workbook : ExcelWorkbook
-var col_row_regex : RegEx = RegEx.new()
-var xml_data : ExcelXMLFile:
+var xml_file : ExcelXMLFile:
 	set(v):
-		assert(xml_data == null)
-		xml_data = v
+		assert(xml_file == null)
+		xml_file = v
 
 var _string_value_cache : Array:
 	get: return workbook._string_value_cache
+var _col_row_regex : RegEx = RegEx.new()
+var _image_regex : RegEx = RegEx.new()
 
 
 #============================================================
@@ -24,8 +25,9 @@ var _string_value_cache : Array:
 #============================================================
 func _init(workbook: ExcelWorkbook, sheet_xml_path: String):
 	self.workbook = workbook
-	self.xml_data = ExcelXMLFile.new(workbook, sheet_xml_path)
-	self.col_row_regex.compile("([A-Z]+)([0-9]+)")
+	self.xml_file = ExcelXMLFile.new(workbook, sheet_xml_path)
+	self._col_row_regex.compile("([A-Z]+)([0-9]+)")
+	self._image_regex.compile("=DISPIMG\\(\"(?<rid>\\w+)\",\\d+\\)")
 
 
 func _to_string():
@@ -36,7 +38,7 @@ func _to_string():
 #  自定义
 #============================================================
 func get_xml_root() -> ExcelXMLNode:
-	return xml_data.get_root()
+	return xml_file.get_root()
 
 
 ## 获取表单中的数据。示例：
@@ -65,7 +67,9 @@ func get_table_data() -> Dictionary:
 				if data_type == "s":
 					var value_idx = int(value)
 					# 如果是字符串，则进行转换
-					column_to_data[coords.x] = _string_value_cache[value_idx]
+					column_to_data[coords.x] = workbook.shared_strings[value_idx]
+				elif data_type == "str":
+					column_to_data[coords.x] = convert_image(value)
 				
 				else:
 					var json = JSON.new()
@@ -81,6 +85,16 @@ func get_table_data() -> Dictionary:
 	return get_meta(META_KEY)
 
 
+func convert_image(value):
+	# 嵌入单元格的图片
+	var result = _image_regex.search(value)
+	if result:
+		var rid = result.get_string("rid")
+		return workbook.cellimages[rid]
+	else:
+		return value
+
+
 func _get_spans(row_node: ExcelXMLNode):
 	var spans = row_node.get_attr("spans")
 	var from_column = int(spans.split(":")[0])
@@ -90,9 +104,8 @@ func _get_spans(row_node: ExcelXMLNode):
 		"to": to_column,
 	}
 
-
 func _to_coords(r: String) -> Vector2i:
-	var result = col_row_regex.search(r)
+	var result = _col_row_regex.search(r)
 	var column_str = result.get_string(1)
 	var row_str = result.get_string(2)
 	
@@ -242,5 +255,5 @@ func alter(row: int, column: int, value) -> void:
 
 func save():
 	var new_file_path = workbook.file_path.get_basename() + "_.xlsx"
-	var result = xml_data.save_as( new_file_path )
+	var result = xml_file.save_as( new_file_path )
 	print(  error_string(result)  )

@@ -35,7 +35,14 @@ func _to_string():
 #============================================================
 #  自定义
 #============================================================
-# XML格式化输出
+static func create(type: String, closure: bool) -> ExcelXMLNode:
+	var node = ExcelXMLNode.new()
+	node._type = type
+	node._closure = closure
+	return node
+
+
+## XML格式化输出
 func to_xml(indent: int = 0) -> String:
 	# 参数
 	var params_list = []
@@ -50,7 +57,7 @@ func to_xml(indent: int = 0) -> String:
 		var children_str = ""
 		for child in _children:
 			children_str += "\n\t%s%s" % [
-				"\t".repeat(indent), 
+				"\t".repeat(indent),
 				child.to_xml(indent + 1),
 			]
 		
@@ -177,10 +184,10 @@ func find_nodes_by_path(path: String) -> Array[ExcelXMLNode]:
 func get_value():
 	return value
 
-
-static func create(type: String, closure: bool) -> ExcelXMLNode:
-	var node = ExcelXMLNode.new()
-	node._type = type
-	node._closure = closure
-	return node
-
+func get_full_value():
+	if value != "":
+		return value
+	var ret: String = ""
+	for child in get_children():
+		ret += child.get_full_value()
+	return ret

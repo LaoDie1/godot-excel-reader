@@ -24,7 +24,7 @@ var workbook = excel.get_workbook()
 
 var sheet = workbook.get_sheet(0)
 # Or use the following line, where two lines of code are equivalent
-#var sheet = workbook.get_sheet("sheet1.xml") as ExcelSheet
+#var sheet = workbook.get_sheet("sheet1") as ExcelSheet
 var table_data = sheet.get_table_data()
 print(JSON.stringify(table_data, "\t"))
 
