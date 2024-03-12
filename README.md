@@ -7,8 +7,9 @@
 
 Reading excel files. 
 
-**For now, only xlsx files can be read**.
+**During the writing function test, there may be risks associated with its use**.
 
+**写入功能试验中，使用可能会有风险！**
 
 
 ---
