@@ -8,6 +8,9 @@
 class_name ExcelFile
 
 
+
+var file_path: String
+
 var _zip_reader : ZIPReader
 var _workbook: ExcelWorkbook
 
@@ -41,15 +44,10 @@ static func open_file(path: String, auto_close: bool = false) -> ExcelFile:
 	return null
 
 
-func close() -> void:
-	if _zip_reader:
-		_zip_reader.close()
-		_zip_reader = null
-
-
 func open(path: String) -> Error:
+	self.file_path = path
 	if _zip_reader != null:
-		_zip_reader.close()
+		close()
 	_zip_reader = ZIPReader.new()
 	
 	var err = _zip_reader.open(path)
@@ -58,8 +56,15 @@ func open(path: String) -> Error:
 		return err
 	
 	_workbook = ExcelWorkbook.new(_zip_reader)
+	_workbook.file_path = path
 	
 	return OK
+
+
+func close() -> void:
+	if _zip_reader:
+		_zip_reader.close()
+		_zip_reader = null
 
 
 func get_workbook() -> ExcelWorkbook:

@@ -8,37 +8,43 @@
 class_name ExcelWorkbook
 
 
-var xml_data : ExcelXMLData:
+const PATH_XML_SHEET = "xl/worksheets/"
+
+
+var file_path: String
+var zip_reader : ZIPReader
+var xml_data : ExcelXMLFile:
 	set(v):
 		assert(xml_data == null)
 		xml_data = v
+var content_types : ExcelXMLFile
 
-var _zip_reader : ZIPReader
+
 var _sheets : Dictionary = {}
 var _sheet_files : Array[String] = []
-var _data_value_list : Array = []
+var _string_value_cache : Array = []
 
 
 #============================================================
 #  内置
 #============================================================
 func _init(zip_reader: ZIPReader):
-	self._zip_reader = zip_reader
+	self.zip_reader = zip_reader
 	var workbook_path = "xl/workbook.xml"
-	self.xml_data = ExcelXMLData.new(_zip_reader, workbook_path)
+	self.xml_data = ExcelXMLFile.new(self, workbook_path)
 	
 	# 表单文件列表
-	for file in _zip_reader.get_files():
-		if file.begins_with("xl/worksheets/") and file.ends_with(".xml"):
+	for file in zip_reader.get_files():
+		if file.begins_with(PATH_XML_SHEET) and file.ends_with(".xml"):
 			_sheet_files.append(file)
-	self._sheet_files.erase("xl/worksheets/")
+	self._sheet_files.erase(PATH_XML_SHEET)
 	
 	# 获取值列表，string 类型单元格数据的缓存
-	var sharedStrings = ExcelXMLData.new(_zip_reader, "xl/sharedStrings.xml")
+	var sharedStrings = get_xml_file("xl/sharedStrings.xml")
 	for si_node in sharedStrings.get_root().get_children():
 		if si_node.get_child_count() > 0:
 			var t_node = si_node.get_child(0)
-			_data_value_list.append(t_node.get_value())
+			_string_value_cache.append(t_node.get_value())
 
 
 func _to_string():
@@ -49,35 +55,34 @@ func _to_string():
 #============================================================
 #  自定义
 #============================================================
-func _create_sheet(xml_path: String) -> ExcelSheet:
-	return ExcelSheet.new(_zip_reader, xml_path, _data_value_list)
+func _get_sheet(xml_path: String) -> ExcelSheet:
+	return ExcelSheet.new(self, xml_path)
 
+func get_xml_file(path: String) -> ExcelXMLFile:
+	return ExcelXMLFile.new(self, path)
 
 func get_sheet_files() -> Array[String]:
 	return _sheet_files
 
-
 func get_sheet_name_list() -> Array[String]:
-	return Array(xml_data.get_first_node("workbook/_sheets").get_children().map(
-			func(item: ExcelXMLNode): return item.get_attr("name")
-		)
-		, TYPE_STRING
-		, ""
-		, null
-	)
+	var sheets = xml_data \
+		.find_first_node("workbook/_sheets") \
+		.get_children() \
+		.map( func(item: ExcelXMLNode): return item.get_attr("name") )
+	return Array(sheets, TYPE_STRING, "", null)
 
 
 func get_sheets() -> Array[ExcelSheet]:
 	if _sheets.is_empty():
 		for xml_path in _sheet_files:
-			_sheets[xml_path] = _create_sheet(xml_path)
+			_sheets[xml_path] = _get_sheet(xml_path)
 	return Array(_sheets.values(), TYPE_OBJECT, "RefCounted", ExcelSheet)
 
 
 func get_sheet(idx_or_name) -> ExcelSheet:
 	var xml_path : String = get_sheet_files()[idx_or_name] \
 		if idx_or_name is int \
-		else ("xl/worksheets/" + idx_or_name)
+		else (PATH_XML_SHEET + idx_or_name)
 	
 	if not xml_path.ends_with(".xml"):
 		xml_path += ".xml"
@@ -89,7 +94,7 @@ func get_sheet(idx_or_name) -> ExcelSheet:
 	
 	# 还没加载这个数据则进行加载
 	if not _sheets.has(xml_path):
-		_sheets[xml_path] = _create_sheet(xml_path)
+		_sheets[xml_path] = _get_sheet(xml_path)
 	
 	return _sheets[xml_path]
 

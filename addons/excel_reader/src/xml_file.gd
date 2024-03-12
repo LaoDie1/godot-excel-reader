@@ -1,12 +1,15 @@
 #============================================================
-#    Xml Data
+#    Xml File
 #============================================================
 # - author: zhangxuetu
 # - datetime: 2023-05-27 21:52:06
 # - version: 4.0
 #============================================================
-class_name ExcelXMLData
+class_name ExcelXMLFile
 
+
+var workbook: ExcelWorkbook
+var xml_path: String
 
 var _root : ExcelXMLNode
 var _source_code : String = "":
@@ -23,8 +26,11 @@ func _to_string():
 	return "<%s#%s>" % ["XMLData", get_instance_id()]
 
 
-func _init(zip_reader: ZIPReader, xml_path: String):
-	var res := zip_reader.read_file(xml_path)
+func _init(workbook: ExcelWorkbook, xml_path: String):
+	self.workbook = workbook
+	self.xml_path = xml_path
+	
+	var res := workbook.zip_reader.read_file(xml_path)
 	var stack = []
 	_source_code = PackedByteArray(res).get_string_from_utf8()
 	var parser = XMLParser.new()
@@ -103,4 +109,33 @@ func get_root() -> ExcelXMLNode:
 func get_source_code() -> String:
 	return _source_code
 
+
+## 保存数据
+func save_as(path: String):
+	var writer := ZIPPacker.new()
+	var err := writer.open(path)
+	if err != OK:
+		return err
+	
+	# 其他数据
+	var file_data_map = {}
+	for file in workbook.zip_reader.get_files():
+		if file != xml_path:
+			var file_data = workbook.zip_reader.read_file(file)
+			file_data_map[file] = file_data
+	
+	for file in file_data_map:
+		writer.start_file(file)
+		writer.write_file(file_data_map[file])
+	
+	# 新数据
+	writer.start_file(xml_path)
+	writer.write_file(
+		get_root().to_xml().to_utf8_buffer()
+	)
+	
+	writer.close_file()
+	writer.close()
+	
+	return OK
 
