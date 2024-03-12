@@ -183,6 +183,7 @@ func alter(row: int, column: int, value) -> void:
 		var row_node_dict = _get_row_node_dict()
 		var row_node : ExcelXMLNode
 		if not row_node_dict.has(row):
+			# 没有这一行，则新建
 			row_node = ExcelXMLNode.create("row", false)
 			row_node.set_attr("r", str(row))
 			var sheet_data_node = get_xml_root().find_first_node("sheetData")
