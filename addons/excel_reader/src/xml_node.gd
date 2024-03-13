@@ -52,7 +52,7 @@ func to_xml(indent: int = 0) -> String:
 		if not params_list.is_empty() \
 		else ""
 	
-	if not _closure:
+	if not _closure or _children.size() > 0:
 		# 子节点
 		var children_str = ""
 		for child in _children:
@@ -88,7 +88,7 @@ func get_type() -> String:
 func get_parent() -> ExcelXMLNode:
 	return _parent
 
-func get_attr(property) -> String:
+func get_attr(property):
 	return _attributes.get(property, "")
 
 func has_attr(property) -> bool:
@@ -109,6 +109,7 @@ func remove_all_child():
 func add_child(node: ExcelXMLNode) -> void:
 	_children.append(node)
 	node._parent = self
+	_closure = false
 
 
 func get_children() -> Array[ExcelXMLNode]:
@@ -132,6 +133,17 @@ func get_child(idx: int) -> ExcelXMLNode:
 
 func get_child_count() -> int:
 	return _children.size()
+
+func get_value():
+	return value
+
+func get_full_value():
+	if value != "":
+		return value
+	var ret: String = ""
+	for child in get_children():
+		ret += child.get_full_value()
+	return ret
 
 func find_first_node(type: String) -> ExcelXMLNode:
 	for child in get_children():
@@ -177,17 +189,4 @@ func find_nodes_by_path(path: String) -> Array[ExcelXMLNode]:
 					current.append(child)
 		all.append_array(current)
 		last = current
-		#prints(current, items[i])
 	return all
-
-
-func get_value():
-	return value
-
-func get_full_value():
-	if value != "":
-		return value
-	var ret: String = ""
-	for child in get_children():
-		ret += child.get_full_value()
-	return ret

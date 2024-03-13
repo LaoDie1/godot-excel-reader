@@ -26,13 +26,11 @@ func _to_string():
 	return "<%s#%s>" % ["XMLData", get_instance_id()]
 
 
-func _init(workbook: ExcelWorkbook, xml_path: String):
+func _init(workbook: ExcelWorkbook, xml_path: String, res_bytes: PackedByteArray):
 	self.workbook = workbook
 	self.xml_path = xml_path
 	
-	var res := workbook.zip_reader.read_file(xml_path)
-	var stack = []
-	_source_code = PackedByteArray(res).get_string_from_utf8()
+	_source_code = res_bytes.get_string_from_utf8()
 	var parser = XMLParser.new()
 	if parser.open_buffer(_source_code_buffer) == OK:
 		# 第一个节点
@@ -72,11 +70,5 @@ func get_root() -> ExcelXMLNode:
 func get_source_code() -> String:
 	return _source_code
 
-
-## 更新数据，修改完数据，需要更新这个 xml
-func update():
-	var file_data_map = workbook.get_path_to_file_dict()
-	file_data_map[xml_path] = get_root().to_xml().to_utf8_buffer()
-	workbook.save()
-	return OK
-
+func get_xml_path() -> String:
+	return xml_path

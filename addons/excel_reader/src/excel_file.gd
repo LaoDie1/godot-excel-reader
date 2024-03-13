@@ -42,6 +42,10 @@ static func open_file(path: String, auto_close: bool = false) -> ExcelFile:
 	return null
 
 
+func get_workbook() -> ExcelWorkbook:
+	return workbook
+
+
 func open(path: String) -> Error:
 	self.file_path = path
 	if zip_reader != null:
@@ -50,7 +54,7 @@ func open(path: String) -> Error:
 	
 	var err = zip_reader.open(path)
 	if err != OK:
-		print("Open failed: ", error_string(err))
+		printerr("Open failed: ", error_string(err))
 		return err
 	
 	workbook = ExcelWorkbook.new(zip_reader)
@@ -65,23 +69,20 @@ func close() -> void:
 		zip_reader = null
 
 
-func get_workbook() -> ExcelWorkbook:
-	return workbook
-
-
-func save(path: String = ""):
+func save(path: String = "") -> Error:
 	if path == "":
 		path = self.file_path
 	var writer := ZIPPacker.new()
 	var err := writer.open(path)
 	if err != OK:
+		printerr("Save failed: ", error_string(err))
 		return err
 	
 	# 写入数据
-	var file_data_map = workbook.get_path_to_file_dict()
-	for file in file_data_map:
+	var file_data_dict = workbook.get_files_bytes()
+	for file in file_data_dict:
 		writer.start_file(file)
-		writer.write_file(file_data_map[file])
+		writer.write_file(file_data_dict[file])
 	
 	writer.close_file()
 	writer.close()

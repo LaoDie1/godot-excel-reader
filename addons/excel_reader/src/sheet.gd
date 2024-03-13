@@ -8,14 +8,19 @@
 class_name ExcelSheet
 
 
+const MetaKey = {
+	TABLE_DATA = "_table_data",
+	ROW_NODE_DICT = "_row_node_dict",
+	COLUMN_NODE_DICT = "_column_node_dict",
+}
+
 var workbook : ExcelWorkbook
 var xml_file : ExcelXMLFile:
 	set(v):
 		assert(xml_file == null)
 		xml_file = v
 
-var _string_value_cache : Array:
-	get: return workbook._string_value_cache
+var _xml_path : String
 var _col_row_regex : RegEx = RegEx.new()
 var _image_regex : RegEx = RegEx.new()
 
@@ -25,7 +30,7 @@ var _image_regex : RegEx = RegEx.new()
 #============================================================
 func _init(workbook: ExcelWorkbook, sheet_xml_path: String):
 	self.workbook = workbook
-	self.xml_file = ExcelXMLFile.new(workbook, sheet_xml_path)
+	self.xml_file = workbook.get_xml_file(sheet_xml_path)
 	self._col_row_regex.compile("([A-Z]+)([0-9]+)")
 	self._image_regex.compile("=DISPIMG\\(\"(?<rid>\\w+)\",\\d+\\)")
 
@@ -40,6 +45,9 @@ func _to_string():
 func get_xml_root() -> ExcelXMLNode:
 	return xml_file.get_root()
 
+func get_xml_path() -> String:
+	return _xml_path
+
 
 ## 获取表单中的数据。示例：
 ##[codeblock]
@@ -48,8 +56,7 @@ func get_xml_root() -> ExcelXMLNode:
 ##print(value)
 ##[/codeblock]
 func get_table_data() -> Dictionary:
-	const META_KEY = "_table_data"
-	if not has_meta(META_KEY):
+	if not has_meta(MetaKey.TABLE_DATA):
 		var row_to_column_data = {}
 		var sheet_data_node = get_xml_root().find_first_node("sheetData")
 		
@@ -69,11 +76,11 @@ func get_table_data() -> Dictionary:
 					# 如果是字符串，则进行转换
 					column_to_data[coords.x] = workbook.shared_strings[value_idx]
 				elif data_type == "str":
-					column_to_data[coords.x] = convert_image(value)
+					column_to_data[coords.x] = _convert_image(value)
 				
 				else:
 					var json = JSON.new()
-					if json.parse(value) == OK:
+					if value is String and json.parse(value) == OK:
 						column_to_data[coords.x] = json.data
 					else:
 						column_to_data[coords.x] = value
@@ -81,12 +88,12 @@ func get_table_data() -> Dictionary:
 			var row = int(row_node.get_attr("r"))
 			row_to_column_data[row] = column_to_data
 		
-		set_meta(META_KEY, row_to_column_data)
-	return get_meta(META_KEY)
+		set_meta(MetaKey.TABLE_DATA, row_to_column_data)
+	return get_meta(MetaKey.TABLE_DATA)
 
 
-func convert_image(value):
-	# 嵌入单元格的图片
+func _convert_image(value: String):
+	# 嵌入单元格的图片表达式转为实际图片数据
 	var result = _image_regex.search(value)
 	if result:
 		var rid = result.get_string("rid")
@@ -120,7 +127,7 @@ func _to_coords(r: String) -> Vector2i:
 # 转为 26 进制
 func _to_26_base(num: int) -> String:
 	assert(num > 0)
-	var value = ""
+	var value : String = ""
 	for i in range(1, 16):
 		var power_value = (26 ** i)
 		var result : int = num / power_value
@@ -134,20 +141,18 @@ func _to_26_base(num: int) -> String:
 
 
 func _get_row_node_dict() -> Dictionary:
-	const META_KEY = "_row_node_dict"
-	if not has_meta(META_KEY):
+	if not has_meta(MetaKey.ROW_NODE_DICT):
 		var xml_node_dict = {}
 		var sheet_data_node = get_xml_root().find_first_node("sheetData")
 		for row_node in sheet_data_node.get_children():
 			var row = int(row_node.get_attr("r"))
 			xml_node_dict[row] = row_node
-		set_meta(META_KEY, xml_node_dict)
-	return get_meta(META_KEY)
+		set_meta(MetaKey.ROW_NODE_DICT, xml_node_dict)
+	return get_meta(MetaKey.ROW_NODE_DICT)
 
 
 func _get_column_node_dict() -> Dictionary:
-	const META_KEY = "_column_node_dict"
-	if not has_meta(META_KEY):
+	if not has_meta(MetaKey.COLUMN_NODE_DICT):
 		var xml_node_dict = {}
 		var row_node_dict = _get_row_node_dict()
 		for row in row_node_dict:
@@ -158,8 +163,8 @@ func _get_column_node_dict() -> Dictionary:
 				var column = coord.x
 				columns[column] = column_node
 			xml_node_dict[row] = columns
-		set_meta(META_KEY, xml_node_dict)
-	return get_meta(META_KEY)
+		set_meta(MetaKey.COLUMN_NODE_DICT, xml_node_dict)
+	return get_meta(MetaKey.COLUMN_NODE_DICT)
 
 
 func get_value(row: int, column: int):
@@ -177,7 +182,6 @@ func get_value(row: int, column: int):
 func alter(row: int, column: int, value) -> void:
 	assert(row > 0)
 	assert(column > 0)
-	#assert(value is String or value is Image)
 	
 	var column_node_dict = _get_column_node_dict()
 	if (value is String and value == "") or typeof(value) == TYPE_NIL:
@@ -206,20 +210,20 @@ func alter(row: int, column: int, value) -> void:
 		row_node = row_node_dict[row]
 		
 		# 新数据的单元格
-		var new_column_node = ExcelXMLNode.create("c", false)
+		column_node = ExcelXMLNode.create("c", false)
 		var column_r = _to_26_base(column) + row_node.get_attr("r") # 单元格坐标位置
-		new_column_node.set_attr("r", column_r)
-		row_node.add_child(new_column_node)
-		column_node = new_column_node
+		column_node.set_attr("r", column_r)
+		row_node.add_child(column_node)
 		
 		# 更新 row 的 spans 值
 		var spans = _get_spans(row_node)
-		if spans.to < column:
-			row_node.set_attr("r", "%d:%d" % [ spans.from, column ])
-		if spans.from > column:
-			row_node.set_attr("r", "%d:%d" % [ column, spans.to ])
+		if spans.from > column or spans.to < column:
+			row_node.set_attr("spans", "%d:%d" % [ 
+				min(spans.from, column), 
+				max(spans.to, column) 
+			])
 		
-		# 更新 workbook 的维度
+		# 更新 sheet 的维度
 		var dimension_node = get_xml_root().find_first_node("dimension")
 		var refs = dimension_node.get_attr("ref").split(":")
 		var from = _to_coords(refs[0])
@@ -236,25 +240,21 @@ func alter(row: int, column: int, value) -> void:
 	# 修改值
 	match typeof(value):
 		TYPE_STRING:
-			ExcelDataType.set_text(column_node, value, _string_value_cache)
-			#var update_result = ExcelDataType.set_text(column_node, value, _string_value_cache)
-			#if update_result:
-				# TODO 如果缓存发生改变，则在下一帧进行保存缓存
-				#pass
+			ExcelDataUtil.set_text(workbook, column_node, value)
 			
 		TYPE_INT, TYPE_FLOAT:
-			ExcelDataType.set_number(column_node, value)
+			ExcelDataUtil.set_number(column_node, value)
 			
 		TYPE_OBJECT:
 			assert(value is Image)
-			ExcelDataType.set_image(workbook, column_node, value)
+			ExcelDataUtil.set_image(workbook, column_node, value)
 			
 		_:
 			assert(false, "错误的数据类型")
+	
+	remove_meta(MetaKey.TABLE_DATA)
+	
+	# 调用过这个方法的 xml 路径都会记录到 workbook 中
+	# 保存时自动更新数据
+	workbook.add_changed_file(xml_file.get_xml_path())
 
-
-func save():
-	var new_file_path = workbook.file_path.get_basename() + "_.xlsx"
-	var result = xml_file.update()
-	workbook.save()
-	print(  error_string(result)  )

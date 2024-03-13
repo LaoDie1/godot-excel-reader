@@ -12,6 +12,7 @@ config_version=5
 
 config/name="godot-excel-reader"
 config/features=PackedStringArray("4.2", "Forward Plus")
+run/low_processor_mode=true
 config/icon="res://icon.svg"
 
 [editor_plugins]
