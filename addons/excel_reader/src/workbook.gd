@@ -240,9 +240,9 @@ func convert_image(value: String):
 func format_value(cell_node: ExcelXMLNode):
 	var value_node = cell_node.find_first_node("v")
 	var value = float(value_node.get_value())
-	var format_idx = int(cell_node.get_attr(ExcelDataUtil.PropertyName.CELL_FORMAT))
-	var format_code = _format_code[format_idx]
-	print("进行格式化：", format_code)
+	#var format_idx = int(cell_node.get_attr(ExcelDataUtil.PropertyName.CELL_FORMAT))
+	#var format_code = _format_code[format_idx - 2]
+	#print("进行格式化：", " %-20s" % value, " %-4s" % format_idx, " ", format_code)
 	
 	return value
 
