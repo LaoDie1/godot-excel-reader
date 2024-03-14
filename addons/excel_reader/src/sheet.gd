@@ -70,7 +70,6 @@ func get_table_data() -> Dictionary:
 				# 所在行列坐标
 				var coords = _to_coords(column_node.get_attr("r"))
 				# 判断数据类型
-				var data_type = column_node.get_attr("t")
 				match ExcelDataUtil.get_data_type(column_node):
 					ExcelDataUtil.DataType.STRING:
 						var value_idx = int(value)
@@ -81,7 +80,7 @@ func get_table_data() -> Dictionary:
 						column_to_data[coords.x] = workbook.convert_image(value)
 					
 					ExcelDataUtil.DataType.NUMBER:
-						column_to_data[coords.x] = int(value)
+						column_to_data[coords.x] = float(value)
 			
 			var row : int = int(row_node.get_attr("r"))
 			row_to_column_data[row] = column_to_data
