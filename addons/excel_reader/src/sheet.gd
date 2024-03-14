@@ -82,12 +82,6 @@ func get_table_data() -> Dictionary:
 					
 					ExcelDataUtil.DataType.NUMBER:
 						column_to_data[coords.x] = int(value)
-						
-						#var json = JSON.new()
-						#if value is String and json.parse(value) == OK:
-							#column_to_data[coords.x] = json.data
-						#else:
-							#column_to_data[coords.x] = value
 			
 			var row : int = int(row_node.get_attr("r"))
 			row_to_column_data[row] = column_to_data
