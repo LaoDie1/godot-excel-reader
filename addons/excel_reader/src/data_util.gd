@@ -15,22 +15,6 @@ const DataType = {
 	EXPRESSION = "str", ## 表达式
 }
 
-## 单元格格式
-enum CellFormat {
-	GENERAL, ## 常规
-	TEXT = 1, ## 文本
-	NUMBER = 2, ## 数值
-	DATE = 3, ## 日期
-	TIME = 4, ## 时间
-	PERCENTAGE = 5, ## 百分比
-	CURRENCY = 6, ## 货币
-	ACCOUNTING_SPECIFIC = 7, ## 会计专用
-	FRACTION = 8, ## 分数
-	SCIENTIFIC_COUNTING = 9, ## 科学计数
-	SPECIAL = 10, ## 特殊
-	CUSTOM = 11, ## 自定义
-}
-
 ## 属性名
 const PropertyName = {
 	COORD = "r", ## 所在行列坐标
@@ -44,17 +28,11 @@ static func get_data_type(cell_node: ExcelXMLNode) -> String:
 	return cell_node.get_attr(PropertyName.DATA_TYPE)
 
 
-## 获取单元格格式
-static func get_cell_format(cell_node: ExcelXMLNode) -> CellFormat:
-	if cell_node.has_attr(PropertyName.CELL_FORMAT):
-		match cell_node.get_attr(PropertyName.DATA_TYPE):
-			DataType.STRING: return CellFormat.TEXT
-			DataType.EXPRESSION: return CellFormat.GENERAL # 表达式类型的值
-	else:
-		# 单元格格式。对应上面 [enum CellFormat] 的值
-		var cell_format = int(cell_node.get_attr(PropertyName.CELL_FORMAT))
-		return cell_format
-	return CellFormat.GENERAL
+## 日期时间戳转为字符串类型
+static func date_stamp_to_string(date_stamp: int) -> String:
+	var days = ((date_stamp + 1 - 70 * 365 - 19) * 86400 - 8 * 3600)
+	var datetime = Time.get_datetime_string_from_unix_time(days)
+	return datetime.split("T")[0]
 
 
 ## 获取这个 xml 的 bytes 数据
@@ -85,10 +63,11 @@ static func set_text(workbook: ExcelWorkbook, cell_node: ExcelXMLNode, value: St
 static func set_number(
 	cell_node: ExcelXMLNode, 
 	value: int,
-	cell_format: CellFormat = CellFormat.NUMBER,
+	cell_format: int = -1,
 ):
 	cell_node.remove_attr(PropertyName.DATA_TYPE) # 移除属性类型。默认为数字类型
-	cell_node.set_attr(PropertyName.CELL_FORMAT, cell_format)
+	if cell_format > -1:
+		cell_node.set_attr(PropertyName.CELL_FORMAT, cell_format)
 	set_value(cell_node, value)
 
 

@@ -80,7 +80,7 @@ func get_table_data() -> Dictionary:
 						column_to_data[coords.x] = workbook.convert_image(value)
 					
 					ExcelDataUtil.DataType.NUMBER:
-						column_to_data[coords.x] = float(value)
+						column_to_data[coords.x] = workbook.format_value(column_node)
 			
 			var row : int = int(row_node.get_attr("r"))
 			row_to_column_data[row] = column_to_data

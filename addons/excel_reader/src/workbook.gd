@@ -12,9 +12,10 @@ const FilePaths = {
 	WORKBOOK = "xl/workbook.xml",
 	SHARED_STRINGS = "xl/sharedStrings.xml",
 	CELL_IMAGES = "xl/cellimages.xml",
+	STYLES = "xl/styles.xml",
 	
 	RELS_WORKBOOK = "xl/_rels/workbook.xml.rels",
-	RELS_CELL_IMAGES = "xl/_rels/cellimages.xml.rels"
+	RELS_CELL_IMAGES = "xl/_rels/cellimages.xml.rels",
 }
 
 
@@ -62,6 +63,8 @@ var _path_to_xml_node_cache : Dictionary = {}
 var _path_to_changed_file_node_dict : Dictionary = {}
 var _sheet_info_data_list : Array[Dictionary] = []
 
+var _format_code = []
+
 var _rels : ExcelXMLFile  # rid data
 var _rid_to_path_dict : Dictionary = {}
 
@@ -85,6 +88,13 @@ func _init(zip_reader: ZIPReader):
 		var target_path = "xl/" + child.get_attr("Target") # Files in the xl directory
 		self._rid_to_path_dict[id] = target_path
 	
+	# 数值格式化
+	var xml_file = get_xml_file(FilePaths.STYLES)
+	var num_fmts_node = xml_file.get_root().find_first_node("numFmts")
+	for child in num_fmts_node.get_children():
+		var format_code = child.get_attr("formatCode")
+		_format_code.append(format_code)
+	
 	# Sheets 
 	var sheets = get_xml_file(FilePaths.WORKBOOK) \
 		.get_root() \
@@ -104,6 +114,7 @@ func _init(zip_reader: ZIPReader):
 	var shared_strings_xml_node = get_xml_file(FilePaths.SHARED_STRINGS)
 	for si_node in shared_strings_xml_node.get_root().get_children():
 		shared_strings.append(si_node.get_full_value())
+	
 
 
 func _to_string():
@@ -223,3 +234,15 @@ func convert_image(value: String):
 		return cellimages[rid]
 	else:
 		return value
+
+
+## 数值格式化
+func format_value(cell_node: ExcelXMLNode):
+	var value_node = cell_node.find_first_node("v")
+	var value = float(value_node.get_value())
+	var format_idx = int(cell_node.get_attr(ExcelDataUtil.PropertyName.CELL_FORMAT))
+	var format_code = _format_code[format_idx]
+	print("进行格式化：", format_code)
+	
+	return value
+
