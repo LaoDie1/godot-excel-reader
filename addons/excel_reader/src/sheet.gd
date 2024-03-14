@@ -71,35 +71,29 @@ func get_table_data() -> Dictionary:
 				var coords = _to_coords(column_node.get_attr("r"))
 				# 判断数据类型
 				var data_type = column_node.get_attr("t")
-				if data_type == "s":
-					var value_idx = int(value)
-					# 如果是字符串，则进行转换
-					column_to_data[coords.x] = workbook.shared_strings[value_idx]
-				elif data_type == "str":
-					column_to_data[coords.x] = _convert_image(value)
-				
-				else:
-					var json = JSON.new()
-					if value is String and json.parse(value) == OK:
-						column_to_data[coords.x] = json.data
-					else:
-						column_to_data[coords.x] = value
+				match ExcelDataUtil.get_data_type(column_node):
+					ExcelDataUtil.DataType.STRING:
+						var value_idx = int(value)
+						# 如果是字符串，则进行转换
+						column_to_data[coords.x] = workbook.get_shared_string(value_idx)
+					
+					ExcelDataUtil.DataType.EXPRESSION:
+						column_to_data[coords.x] = workbook.convert_image(value)
+					
+					ExcelDataUtil.DataType.NUMBER:
+						column_to_data[coords.x] = int(value)
+						
+						#var json = JSON.new()
+						#if value is String and json.parse(value) == OK:
+							#column_to_data[coords.x] = json.data
+						#else:
+							#column_to_data[coords.x] = value
 			
-			var row = int(row_node.get_attr("r"))
+			var row : int = int(row_node.get_attr("r"))
 			row_to_column_data[row] = column_to_data
 		
 		set_meta(MetaKey.TABLE_DATA, row_to_column_data)
 	return get_meta(MetaKey.TABLE_DATA)
-
-
-func _convert_image(value: String):
-	# 嵌入单元格的图片表达式转为实际图片数据
-	var result = _image_regex.search(value)
-	if result:
-		var rid = result.get_string("rid")
-		return workbook.cellimages[rid]
-	else:
-		return value
 
 
 func _get_spans(row_node: ExcelXMLNode):

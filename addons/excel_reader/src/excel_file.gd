@@ -69,9 +69,13 @@ func close() -> void:
 		zip_reader = null
 
 
+## 保存文件。
 func save(path: String = "") -> Error:
 	if path == "":
 		path = self.file_path
+	
+	assert(path != "")
+	
 	var writer := ZIPPacker.new()
 	var err := writer.open(path)
 	if err != OK:

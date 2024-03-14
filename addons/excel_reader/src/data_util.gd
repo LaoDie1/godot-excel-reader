@@ -40,15 +40,12 @@ const PropertyName = {
 
 
 ## 获取数据类型
-static func get_data_type(cell_node: ExcelXMLNode):
-	match cell_node.get_attr(PropertyName.DATA_TYPE):
-		"s": return DataType.STRING
-		"str": return DataType.EXPRESSION
-		_: return DataType.NUMBER
+static func get_data_type(cell_node: ExcelXMLNode) -> String:
+	return cell_node.get_attr(PropertyName.DATA_TYPE)
 
 
 ## 获取单元格格式
-static func get_cell_format(cell_node: ExcelXMLNode):
+static func get_cell_format(cell_node: ExcelXMLNode) -> CellFormat:
 	if cell_node.has_attr(PropertyName.CELL_FORMAT):
 		match cell_node.get_attr(PropertyName.DATA_TYPE):
 			DataType.STRING: return CellFormat.TEXT
@@ -62,7 +59,10 @@ static func get_cell_format(cell_node: ExcelXMLNode):
 
 ## 获取这个 xml 的 bytes 数据
 static func get_xml_file_data(xml_file: ExcelXMLFile) -> PackedByteArray:
-	return xml_file.get_root().to_xml().to_utf8_buffer()
+	# 不使用缩进
+	return xml_file.get_root() \
+		.to_xml(0, false) \
+		.to_utf8_buffer()
 
 
 static func set_value(cell_node: ExcelXMLNode, value):

@@ -37,12 +37,12 @@ var cellimages : Dictionary = {}: # name to image map
 			for child in cellimages_xml_data.get_root().get_children():
 				# 名称
 				var xdr_pic = child.get_child(0)
-				var xdr_nv_pic_pr = xdr_pic.find_first_child_node("xdr:nvPicPr")
-				var xdr_cNvPr = xdr_nv_pic_pr.find_first_child_node("xdr:cNvPr")
+				var xdr_nv_pic_pr = xdr_pic.find_first_node("xdr:nvPicPr")
+				var xdr_cNvPr = xdr_nv_pic_pr.find_first_node("xdr:cNvPr")
 				var name = xdr_cNvPr.get_attr("name")
 				# rid
-				var xdr_blip_fill = xdr_pic.find_first_child_node("xdr:blipFill")
-				var a_blip = xdr_blip_fill.find_first_child_node("a:blip")
+				var xdr_blip_fill = xdr_pic.find_first_node("xdr:blipFill")
+				var a_blip = xdr_blip_fill.find_first_node("a:blip")
 				var rid = a_blip.get_attr("r:embed")
 				# 记录
 				var image = Image.new()
@@ -50,6 +50,12 @@ var cellimages : Dictionary = {}: # name to image map
 				cellimages[name] = ImageTexture.create_from_image(image)
 		return cellimages
 
+var _image_regex : RegEx = null:
+	get:
+		if _image_regex == null:
+			_image_regex = RegEx.new()
+			_image_regex.compile("DISPIMG\\(\"(?<rid>\\w+)\",\\d+\\)")
+		return _image_regex
 var _path_to_file_bytes_cache : Dictionary = {}
 var _path_to_sheet_cache : Dictionary = {}
 var _path_to_xml_node_cache : Dictionary = {}
@@ -204,3 +210,16 @@ func update_shared_string_xml(text: String) -> int:
 		add_changed_file(FilePaths.SHARED_STRINGS)
 		
 		return idx
+
+func get_shared_string(idx: int) -> String:
+	return shared_strings[idx]
+
+
+func convert_image(value: String):
+	# 嵌入单元格的图片表达式转为实际图片数据
+	var result = _image_regex.search(value)
+	if result:
+		var rid = result.get_string("rid")
+		return cellimages[rid]
+	else:
+		return value

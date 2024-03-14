@@ -43,7 +43,7 @@ static func create(type: String, closure: bool) -> ExcelXMLNode:
 
 
 ## XML格式化输出
-func to_xml(indent: int = 0) -> String:
+func to_xml(indent: int = 0, format: bool = true) -> String:
 	# 参数
 	var params_list = []
 	for k in _attributes:
@@ -55,22 +55,26 @@ func to_xml(indent: int = 0) -> String:
 	if not _closure or _children.size() > 0:
 		# 子节点
 		var children_str = ""
-		for child in _children:
-			children_str += "\n\t%s%s" % [
-				"\t".repeat(indent),
-				child.to_xml(indent + 1),
-			]
+		if format:
+			for child in _children:
+				children_str += "\n\t%s%s" % [
+					"\t".repeat(indent),
+					child.to_xml(indent + 1, format),
+				]
+		else:
+			for child in _children:
+				children_str += child.to_xml(0, format)
 		
 		# 缩进
 		var indent_str = ""
-		if indent > 0 and children_str:
+		if format and indent > 0 and children_str:
 			indent_str = "\t".repeat(indent)
 		
 		return "<{name}{params}>{_children}{indent}</{name}>".format({
 			"name": _type,
 			"indent": indent_str,
 			"params": params_str,
-			"_children": (children_str + "\n") if children_str else value
+			"_children": (children_str + ("\n" if format else "") ) if children_str else value
 		})
 		
 	else:
@@ -138,9 +142,7 @@ func get_value():
 	return value
 
 func get_full_value():
-	if value != "":
-		return value
-	var ret: String = ""
+	var ret: String = value
 	for child in get_children():
 		ret += child.get_full_value()
 	return ret
