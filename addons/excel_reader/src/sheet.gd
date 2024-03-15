@@ -121,7 +121,7 @@ func _to_26_base(num: int) -> String:
 		if result > 0:
 			value += char(result + 64)
 		else:
-			value += char(num + 64)
+			value += char(num + 65)
 			break
 		num -= power_value
 	return value
@@ -210,7 +210,7 @@ func alter(row: int, column: int, value) -> void:
 				max(spans.to, column) 
 			])
 		
-		# 更新 sheet 的维度
+		# 更新 sheet 的维度，数据的有效范围
 		var dimension_node = get_xml_root().find_first_node("dimension")
 		var refs = dimension_node.get_attr("ref").split(":")
 		var from = _to_coords(refs[0])
