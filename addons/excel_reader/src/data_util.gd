@@ -167,20 +167,16 @@ static func to_coords(r: String) -> Vector2i:
 
 # 转为 26 进制
 static func to_26_base(num: int) -> String:
-	# 向前偏移一格，让 1=A，2=B，而不是 0=A, 1=B
-	num -= 1
-	
-	var value : String = ""
-	for i in range(1, 16):
-		var power_value = (26 ** i)
-		var result : int = num / power_value
-		if result > 0:
-			value += char(result + 64)
-		else:
-			value += char(num + 65)
-			break
-		num -= power_value
-	return value
+	if num == 0:
+		return "@"
+	var result = []
+	var last : int = num
+	while last > 0:
+		var quotient : int = last / 26
+		result.append(char((last % 26) + 64))
+		last = quotient
+	result.reverse()
+	return "".join(result)
 
 
 ## 获取 row 的列范围

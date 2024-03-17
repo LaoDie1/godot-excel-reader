@@ -8,13 +8,20 @@
 @tool
 extends EditorScript
 
+static func to_26_base(num: int):
+	var result = []
+	var last : int = num
+	while last > 0:
+		var quotient : int = last / 26
+		result.append(char((last % 26) + 64))
+		last = quotient
+	result.reverse()
+	return "".join(result)
+
 
 func _run():
 	
-	var list = []
-	for i in 30:
-		list.append( ExcelSheet._to_26_base(i) )
-	print(list)
+	print(ExcelDataUtil.to_26_base(27))
 	
 	return
 	
