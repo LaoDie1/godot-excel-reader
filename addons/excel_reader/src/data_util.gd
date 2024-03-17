@@ -166,21 +166,28 @@ static func to_coords(r: String) -> Vector2i:
 
 
 # 转为 26 进制
-static func to_26_base(num: int) -> String:
-	if num == 0:
+static func to_26_base(dividend: int) -> String:
+	const BASE = 26
+	if dividend == 0:
 		return "@"
 	var result = []
-	var quotient : int
+	var quotient : int = dividend
 	var remainder : int
-	var last : int = num
-	while last > 0:
-		quotient = last / 26
-		remainder = last % 26
-		if remainder == 0:
-			result.append(char(26 + 64))
+	while quotient > 0:
+		quotient = dividend / BASE
+		remainder = dividend % BASE
+		if remainder > 0:
+			result.append(
+				char( (remainder if remainder > 0 else BASE) + 64 )
+			)
+		else:
+			result.append(char(BASE + 64))
+			quotient -= 1
+			if quotient > 0:
+				result.append(char(quotient + 64))
 			break
-		result.append(char((last % 26) + 64))
-		last = quotient
+		dividend = quotient
+	
 	result.reverse()
 	return "".join(result)
 
