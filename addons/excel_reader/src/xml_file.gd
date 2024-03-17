@@ -11,6 +11,7 @@ class_name ExcelXMLFile
 var workbook: ExcelWorkbook
 var xml_path: String
 
+var _head : String = ""
 var _root : ExcelXMLNode
 var _source_code : String = "":
 	set(v):
@@ -22,10 +23,6 @@ var _source_code_buffer : PackedByteArray
 #============================================================
 #  内置
 #============================================================
-func _to_string():
-	return "<%s#%s>" % ["XMLData", get_instance_id()]
-
-
 func _init(workbook: ExcelWorkbook, xml_path: String, res_bytes: PackedByteArray):
 	self.workbook = workbook
 	self.xml_path = xml_path
@@ -38,6 +35,15 @@ func _init(workbook: ExcelWorkbook, xml_path: String, res_bytes: PackedByteArray
 			if parser.get_node_type() == XMLParser.NODE_ELEMENT:
 				_root = _parse(parser)
 				break
+			
+			elif parser.get_node_type() == XMLParser.NODE_UNKNOWN:
+				if _head == "":
+					# 顶部第一个节点格式为 <?xml ?> 格式的节点
+					_head = "<%s>" % parser.get_node_name()
+
+
+func _to_string():
+	return "<%s#%s>" % ["ExcelXMLFile", get_instance_id()]
 
 
 #============================================================
@@ -72,3 +78,11 @@ func get_source_code() -> String:
 
 func get_xml_path() -> String:
 	return xml_path
+
+func to_xml(format: bool = true) -> String:
+	if _head != "":
+		if format:
+			return (_head + "\n") + _root.to_xml(0, format)
+		else:
+			return _head + _root.to_xml(0, format)
+	return _root.to_xml(0, format)

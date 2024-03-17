@@ -11,11 +11,10 @@ extends EditorScript
 
 func _run():
 	
-	#print(Time.get_unix_time_from_datetime_string("1899-12-30T00:00:00"))
-	#print( Time.get_datetime_string_from_unix_time(1036800 + 1121221) )
-	#print(Time.get_datetime_string_from_unix_time(4529200000))
-	var days = ((45292+1 - 70 * 365 - 19) * 86400 - 8 * 3600)
-	print( Time.get_datetime_string_from_unix_time(days) )
+	var list = []
+	for i in 30:
+		list.append( ExcelSheet._to_26_base(i) )
+	print(list)
 	
 	return
 	

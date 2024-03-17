@@ -5,6 +5,12 @@
 # - datetime: 2023-05-27 21:51:54
 # - version: 4.0
 #============================================================
+## Excel 文件
+##
+##读取、保存文件数据
+##[codeblock]
+##var excel = ExcelFile.open_file( file_path )
+##[/codeblock]
 class_name ExcelFile
 
 

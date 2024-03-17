@@ -35,14 +35,19 @@ func _to_string():
 #============================================================
 #  自定义
 #============================================================
-static func create(type: String, closure: bool) -> ExcelXMLNode:
+## 创建 XML 节点
+##[br] - type: 节点名称类型
+##[br] - closure: 是否是闭合的节点
+##[br] - attributes: 节点属性
+static func create(type: String, closure: bool, attributes: Dictionary = {}) -> ExcelXMLNode:
 	var node = ExcelXMLNode.new()
 	node._type = type
 	node._closure = closure
+	node._attributes = attributes
 	return node
 
 
-## XML格式化输出
+## 转为 xml 格式
 func to_xml(indent: int = 0, format: bool = true) -> String:
 	# 参数
 	var params_list = []
@@ -110,8 +115,29 @@ func remove_attr(property: String):
 func remove_all_child():
 	_children.clear()
 
+func remove_child(idx: int):
+	_children.remove_at(idx)
+
+func remove_node(node: ExcelXMLNode):
+	for i in _children.size():
+		if _children[i] == node:
+			_children.remove_at(i)
+			break
+
+func remove_nodes(nodes: Array[ExcelXMLNode]):
+	for i in range(_children.size()-1, -1, -1):
+		if nodes.has(_children[i]):
+			_children.remove_at(i)
+
 func add_child(node: ExcelXMLNode) -> void:
 	_children.append(node)
+	node._parent = self
+	_closure = false
+
+
+## 添加到指定索引位置
+func add_child_to(node: ExcelXMLNode, idx : int):
+	_children.insert(idx, node)
 	node._parent = self
 	_closure = false
 

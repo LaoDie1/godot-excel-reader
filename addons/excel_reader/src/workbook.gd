@@ -5,17 +5,35 @@
 # - datetime: 2023-05-27 21:52:01
 # - version: 4.0
 #============================================================
+## 工作簿
+##
+##统一管理项目中的文件数据
 class_name ExcelWorkbook
 
 
 const FilePaths = {
+	CONTENT_TYPES = "[Content_Types].xml",
+	
+	RELS_WORKBOOK = "xl/_rels/workbook.xml.rels",
+	RELS_CELL_IMAGES = "xl/_rels/cellimages.xml.rels",
+	
 	WORKBOOK = "xl/workbook.xml",
 	SHARED_STRINGS = "xl/sharedStrings.xml",
 	CELL_IMAGES = "xl/cellimages.xml",
 	STYLES = "xl/styles.xml",
+}
+
+const DirPaths = {
+	DOC_PROPS = "docProps",
+	XL = "xl",
 	
-	RELS_WORKBOOK = "xl/_rels/workbook.xml.rels",
-	RELS_CELL_IMAGES = "xl/_rels/cellimages.xml.rels",
+	WORKSHEETS = "xl/worksheets", ## 表单
+	MEDIA = "xl/media", ## 媒体资源
+	THEME = "xl/theme", ## 主题
+	diagrams = "xl/diagrams", ## 形状（SmartArt）
+	chartsheets = "xl/diagrams", ## 图表
+	charts = "charts", ## 图表设置
+	
 }
 
 
@@ -125,9 +143,11 @@ func _to_string():
 #============================================================
 #  自定义
 #============================================================
-func _create_sheet(xml_path: String) -> ExcelSheet:
-	return ExcelSheet.new(self, xml_path)
-
+## 获取所有文件数据。数据以 
+##[codeblock]
+##data[file_path] = PackedByteArray()
+##[/codeblock]
+##格式返回
 func get_files_bytes() -> Dictionary:
 	if not _path_to_changed_file_node_dict.is_empty():
 		for path in _path_to_changed_file_node_dict:
@@ -138,19 +158,23 @@ func get_files_bytes() -> Dictionary:
 		_path_to_changed_file_node_dict.clear()
 	return _path_to_file_bytes_cache
 
+## 获取这个 XML 文件对象
+func get_xml_file(path: String) -> ExcelXMLFile:
+	if not _path_to_xml_node_cache.has(path):
+		# 如果缓存中不存在，则从 ZIPReader 中读取数据
+		_path_to_xml_node_cache[path] = ExcelXMLFile.new(self, path, zip_reader.read_file(path))
+	return _path_to_xml_node_cache[path]
+
+## 读取 XML 文件 bytes 数据
 func read_file(path: String) -> PackedByteArray:
 	if _path_to_changed_file_node_dict.has(path):
+		_path_to_changed_file_node_dict.erase(path)
+		# 如果这个文件发生了改变，则重新加载数据
 		var xml_file = get_xml_file(path)
 		var data = ExcelDataUtil.get_xml_file_data(xml_file)
 		_path_to_file_bytes_cache[path] = data
-		_path_to_changed_file_node_dict.erase(path)
-		return data
 	return _path_to_file_bytes_cache[path]
 
-func get_xml_file(path: String) -> ExcelXMLFile:
-	if not _path_to_xml_node_cache.has(path):
-		_path_to_xml_node_cache[path] = ExcelXMLFile.new(self, path, zip_reader.read_file(path))
-	return _path_to_xml_node_cache[path]
 
 func get_sheet_files() -> Array[String]:
 	return Array(_sheet_info_data_list.map(func(item): 
@@ -161,8 +185,11 @@ func get_sheets() -> Array[ExcelSheet]:
 	if _path_to_sheet_cache.is_empty():
 		for data in _sheet_info_data_list:
 			var xml_path = data["path"]
-			_path_to_sheet_cache[xml_path] = _create_sheet(xml_path)
+			_path_to_sheet_cache[xml_path] = ExcelSheet.new(self, xml_path)
 	return Array(_path_to_sheet_cache.values(), TYPE_OBJECT, "RefCounted", ExcelSheet)
+
+func get_sheet_count() -> int:
+	return _sheet_info_data_list.size()
 
 
 ## 获取这个 Sheet 名称的 xml 文件路径
@@ -174,6 +201,8 @@ func get_path_by_sheet_name(sheet_name: String) -> String:
 
 
 func get_sheet(idx_or_name) -> ExcelSheet:
+	assert(idx_or_name is int or idx_or_name is String)
+	
 	# 如果 idx_or_name 为 name，则要注意大小写，因为这里区分大小写
 	var xml_path : String = get_sheet_files()[idx_or_name] \
 		if idx_or_name is int \
@@ -189,12 +218,12 @@ func get_sheet(idx_or_name) -> ExcelSheet:
 	
 	# 还没加载这个数据则进行加载
 	if not _path_to_sheet_cache.has(xml_path):
-		_path_to_sheet_cache[xml_path] = _create_sheet(xml_path)
+		_path_to_sheet_cache[xml_path] = ExcelSheet.new(self, xml_path)
 	
 	return _path_to_sheet_cache[xml_path]
 
 
-## 记录修改过的文件路径
+## 记录新建/修改过的文件路径
 func add_changed_file(path: String):
 	_path_to_changed_file_node_dict[path] = null
 
@@ -222,11 +251,132 @@ func update_shared_string_xml(text: String) -> int:
 		
 		return idx
 
+
+## 创建新的 Sheet
+func create_sheet(sheet_name: String, data: Dictionary = {}) -> ExcelSheet:
+	var xml_path = DirPaths.WORKSHEETS.path_join(sheet_name)
+	if not xml_path.ends_with(".xml"):
+		xml_path += ".xml"
+	
+	# 根节点
+	var worksheet = ExcelXMLNode.create("worksheet", false, {
+		"xmlns": "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
+		"xmlns:r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+		"xmlns:xdr": "http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing",
+		"xmlns:x14": "http://schemas.microsoft.com/office/spreadsheetml/2009/9/main",
+		"xmlns:mc": "http://schemas.openxmlformats.org/markup-compatibility/2006",
+		"xmlns:etc": "http://www.wps.cn/officeDocument/2017/etCustomData",
+	})
+	
+	# 表单分界线
+	var sheet_pr = ExcelXMLNode.create("sheetPr", true)
+	worksheet.add_child(sheet_pr)
+	
+	# 有效范围
+	var dimension = ExcelXMLNode.create("dimension", true)
+	dimension.set_attr("ref", "A1:A1")
+	worksheet.add_child(dimension)
+	
+	# 选中范围
+	var sheetViews = ExcelXMLNode.create("sheetViews", false)
+	var sheetView = ExcelXMLNode.create("sheetView", false)
+	sheetView.set_attr("tabSelected", 1)
+	sheetView.set_attr("workbookViewId", 0)
+	var selection = ExcelXMLNode.create("selection", true)
+	selection.set_attr("activeCell", "A1")
+	selection.set_attr("sqref", "A1")
+	sheetView.add_child(selection)
+	sheetViews.add_child(sheetView)
+	worksheet.add_child(sheetViews)
+	
+	# 表单格式分界线
+	var sheetFormatPr = ExcelXMLNode.create("sheetFormatPr", true)
+	sheetFormatPr.set_attr("defaultColWidth", 8.88888888888889)
+	sheetFormatPr.set_attr("defaultRowHeight", 14.4)
+	worksheet.add_child(sheetFormatPr)
+	
+	# 列宽
+	var cols = ExcelXMLNode.create("cols", false)
+	worksheet.add_child(cols)
+	
+	# 表单数据
+	var sheetData = ExcelXMLNode.create("sheetData", false)
+	var row = ExcelXMLNode.create("row", false, {
+		"r": 4,
+		"spans": "1:1",
+	})
+	sheetData.add_child(row)
+	
+	# 添加这个 Sheet 的数据
+	ExcelDataUtil.add_node_by_data(self, worksheet, data)
+	
+	# 其他
+	var pageMargins = ExcelXMLNode.create("pageMargins", true, {
+		"left": "0.75",
+		"right": "0.75",
+		"top": "1",
+		"bottom": "1",
+		"header": "0.5",
+		"footer": "0.5",
+	})
+	worksheet.add_child(pageMargins)
+	
+	var headerFooter = ExcelXMLNode.create("headerFooter", true)
+	worksheet.add_child(headerFooter)
+	
+	# Workbook XML文件关系文件
+	var rels_workbook = get_xml_file(FilePaths.RELS_WORKBOOK)
+	var relationships = rels_workbook.get_root()
+	var relationship = relationships.get_child(0)
+	var last_id = int(relationship.get_attr("Id"))
+	
+	var new_relationship = ExcelXMLNode.create("Relationship", true, {
+		"Id": "rId" + str(last_id + 1),
+		"Type": "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet",
+		"Target": "worksheets/" + sheet_name + ".xml"
+	})
+	relationships.add_child_to(new_relationship, 0)
+	
+	# 内容类型
+	var content_types = get_xml_file(FilePaths.CONTENT_TYPES)
+	var types = content_types.get_root()
+	var new_override = ExcelXMLNode.create("Override", true, {
+		"PartName": xml_path,
+		"ContentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml",
+	})
+	types.add_child(new_override)
+	
+	# workbook
+	var workbook = get_xml_file(FilePaths.WORKBOOK)
+	var sheets = workbook.get_root().find_first_node("sheets")
+	# FIXME 下面的 ID 需要自增
+	var sheet = ExcelXMLNode.create("sheet", true, {
+		"name": sheet_name,
+		"sheetId": 2,
+		"r:id": 2,
+	})
+	sheets.add_child(sheet)
+	
+	
+	# 记录发生改变的数据
+	_path_to_xml_node_cache[xml_path] = ExcelXMLFile.new(self, xml_path, ExcelDataUtil.get_xml_node_data(worksheet))
+	add_changed_file(xml_path)
+	add_changed_file(FilePaths.RELS_WORKBOOK)
+	add_changed_file(FilePaths.CONTENT_TYPES)
+	add_changed_file(FilePaths.WORKBOOK)
+	
+	# TODO _rid_to_path_dict 等内容都需要更新数据
+	
+	
+	
+	return get_sheet(sheet_name)
+
+
 ## 获取共享字符串
 func get_shared_string(idx: int) -> String:
 	return shared_strings[idx]
 
-
+## 表达式值转为图片
 func convert_image(value: String):
 	# 嵌入单元格的图片表达式转为实际图片数据
 	var result = _image_regex.search(value)

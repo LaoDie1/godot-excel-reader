@@ -17,10 +17,17 @@ const DataType = {
 
 ## 属性名
 const PropertyName = {
-	COORD = "r", ## 所在行列坐标
+	COLUMN_ROW = "r", ## 所在行或列
 	DATA_TYPE = "t", ## 数据类型
 	CELL_FORMAT = "s", ## 单元格格式
 }
+
+static var _COLUMN_ROW_REGEX: RegEx:
+	get:
+		if _COLUMN_ROW_REGEX == null:
+			_COLUMN_ROW_REGEX = RegEx.new()
+			_COLUMN_ROW_REGEX.compile("([A-Z]+)([0-9]+)")
+		return _COLUMN_ROW_REGEX
 
 
 ## 获取数据类型
@@ -38,10 +45,14 @@ static func date_stamp_to_string(date_stamp: int) -> String:
 ## 获取这个 xml 的 bytes 数据
 static func get_xml_file_data(xml_file: ExcelXMLFile) -> PackedByteArray:
 	# 不使用缩进
-	return xml_file.get_root() \
-		.to_xml(0, false) \
+	return xml_file \
+		.to_xml(false) \
 		.to_utf8_buffer()
 
+static func get_xml_node_data(xml_node: ExcelXMLNode) -> PackedByteArray:
+	return xml_node \
+		.to_xml(0, false) \
+		.to_utf8_buffer()
 
 static func set_value(cell_node: ExcelXMLNode, value):
 	var v_node = cell_node.find_first_node("v")
@@ -75,6 +86,27 @@ static func set_number(
 	# TODO 字符串转为时间戳
 	# var time_stamp
 	#set_number(cell_node, time_stamp, CellFormat.DATE)
+
+
+## 修改数据
+static func alter_value(
+	workbook: ExcelWorkbook, 
+	column_node: ExcelXMLNode,
+	value
+):
+	match typeof(value):
+		TYPE_STRING:
+			set_text(workbook, column_node, value)
+			
+		TYPE_INT, TYPE_FLOAT:
+			set_number(column_node, value)
+			
+		TYPE_OBJECT:
+			assert(value is Image)
+			set_image(workbook, column_node, value)
+			
+		_:
+			assert(false, "错误的数据类型")
 
 
 # FIXME 暂时遇到问题，未完成
@@ -117,5 +149,111 @@ static func set_image(
 	f_node.value = '_xlfn.DISPIMG("%s",1)' % image_id
 	cell_node.add_child(f_node)
 	set_value(cell_node, 'DISPIMG("%s",1)' % image_id)
+
+
+## r属性转为坐标
+static func to_coords(r: String) -> Vector2i:
+	var result = _COLUMN_ROW_REGEX.search(r)
+	var column_str = result.get_string(1)
+	var row_str = result.get_string(2)
+	
+	var column : int = 0
+	var column_length : int = column_str.length()
+	for i in column_length:
+		var num = (column_str.unicode_at(i) - 64)
+		column += num * pow(26, column_length - 1 - i)
+	return Vector2i(column, row_str.to_int())
+
+
+# 转为 26 进制
+static func to_26_base(num: int) -> String:
+	# 向前偏移一格，让 1=A，2=B，而不是 0=A, 1=B
+	num -= 1
+	
+	var value : String = ""
+	for i in range(1, 16):
+		var power_value = (26 ** i)
+		var result : int = num / power_value
+		if result > 0:
+			value += char(result + 64)
+		else:
+			value += char(num + 65)
+			break
+		num -= power_value
+	return value
+
+
+## 获取 row 的列范围
+static func get_spans(spans: String) -> Dictionary:
+	var from_column := int(spans.split(":")[0])
+	var to_column := int(spans.split(":")[1])
+	return {
+		"from": from_column,
+		"to": to_column,
+	}
+
+
+## 根据数据添加节点
+static func add_node_by_data(
+	workbook: ExcelWorkbook, 
+	root: ExcelXMLNode, 
+	data: Dictionary,
+):
+	if data.is_empty():
+		return
+	
+	var sheet_data_node = root.find_first_node("sheetData")
+	
+	# 原有的每行对应的列的数据
+	var row_to_column_data : Dictionary = {}
+	for row_node in sheet_data_node.get_children():
+		var row = int(row_node.get_attr(PropertyName.COLUMN_ROW))
+		var column_data = {
+			"row_node": row_node, # “这一行的每个列”对应的行节点
+		}
+		var coords : Vector2i
+		var column : int 
+		for child in row_node.get_children():
+			coords = to_coords(child.get_attr(PropertyName.COLUMN_ROW))
+			column = coords.x
+			column_data[column] = child
+		row_to_column_data[row] = column_data
+	
+	# 添加数据
+	var remove_children : Array[ExcelXMLNode] = []
+	for row in data:
+		var row_node : ExcelXMLNode 
+		var min_column = INF
+		var max_column : int = 0
+		if row_to_column_data.has(row):
+			row_node = row_to_column_data[row]["row_node"]
+			var spans = get_spans(row_node.get_attr("spans"))
+			min_column = spans.from
+			max_column = spans.to
+			
+		else:
+			row_node = ExcelXMLNode.create("row", false, {
+				PropertyName.COLUMN_ROW: row,
+			})
+		
+		# 添加列节点
+		var column_to_node_dict : Dictionary = row_to_column_data[row]
+		var column_data : Dictionary = data[row]
+		for column in column_data:
+			min_column = min(min_column, column)
+			max_column = max(max_column, column)
+			# 位置属性
+			var r = "%s%s" % [ to_26_base( column ), row ]
+			var column_node : ExcelXMLNode = column_to_node_dict.get(column) 
+			if column_node == null:
+				column_node = ExcelXMLNode.create("c", false, {
+					PropertyName.COLUMN_ROW: r,
+				})
+				row_node.add_child(column_node)
+			alter_value(null, column_node, column_data[column])
+		
+		row_node.set_attr("spans", "%s:%s" % [min_column, max_column])
+		root.add_child(row_node)
+
 
 
