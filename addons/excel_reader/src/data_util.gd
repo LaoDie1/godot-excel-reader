@@ -170,9 +170,15 @@ static func to_26_base(num: int) -> String:
 	if num == 0:
 		return "@"
 	var result = []
+	var quotient : int
+	var remainder : int
 	var last : int = num
 	while last > 0:
-		var quotient : int = last / 26
+		quotient = last / 26
+		remainder = last % 26
+		if remainder == 0:
+			result.append(char(26 + 64))
+			break
 		result.append(char((last % 26) + 64))
 		last = quotient
 	result.reverse()
