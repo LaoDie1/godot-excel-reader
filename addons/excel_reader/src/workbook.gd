@@ -40,34 +40,7 @@ const DirPaths = {
 var file_path: String
 var zip_reader : ZIPReader
 var shared_strings : Array = []
-var cellimages : Dictionary = {}: # name to image map
-	get:
-		if cellimages.is_empty():
-			# 读取 rid 对应的图片
-			var rels_cellimages_xml_data = get_xml_file(FilePaths.RELS_CELL_IMAGES)
-			var rid_to_images = {}
-			for child in rels_cellimages_xml_data.get_root().get_children():
-				var rid = child.get_attr("Id")
-				var path = child.get_attr("Target")
-				rid_to_images[rid] = zip_reader.read_file("xl".path_join(path))
-			
-			# 读取数据引用
-			var cellimages_xml_data = get_xml_file(FilePaths.CELL_IMAGES)
-			for child in cellimages_xml_data.get_root().get_children():
-				# 名称
-				var xdr_pic = child.get_child(0)
-				var xdr_nv_pic_pr = xdr_pic.find_first_node("xdr:nvPicPr")
-				var xdr_cNvPr = xdr_nv_pic_pr.find_first_node("xdr:cNvPr")
-				var name = xdr_cNvPr.get_attr("name")
-				# rid
-				var xdr_blip_fill = xdr_pic.find_first_node("xdr:blipFill")
-				var a_blip = xdr_blip_fill.find_first_node("a:blip")
-				var rid = a_blip.get_attr("r:embed")
-				# 记录
-				var image = Image.new()
-				image.load_png_from_buffer(PackedByteArray(rid_to_images[rid]))
-				cellimages[name] = ImageTexture.create_from_image(image)
-		return cellimages
+var cellimages : Dictionary = {} # name to image map
 
 var _image_regex : RegEx = null:
 	get:
@@ -81,9 +54,9 @@ var _path_to_xml_node_cache : Dictionary = {}
 var _path_to_changed_file_node_dict : Dictionary = {}
 var _sheet_info_data_list : Array[Dictionary] = []
 
-var _format_code = []
+var _rels_workbook : ExcelXMLFile  # rid data file
 
-var _rels : ExcelXMLFile  # rid data
+var _format_code : Array = [] # 数字
 var _rid_to_path_dict : Dictionary = {}
 
 
@@ -98,13 +71,36 @@ func _init(zip_reader: ZIPReader):
 	for path in zip_reader.get_files():
 		_path_to_file_bytes_cache[path] = zip_reader.read_file(path)
 	
-	self._rels = get_xml_file(FilePaths.RELS_WORKBOOK)
+	self._rels_workbook = get_xml_file(FilePaths.RELS_WORKBOOK)
 	
 	# RID file path
-	for child in _rels.get_root().get_children():
+	for child in _rels_workbook.get_root().get_children():
 		var id = child.get_attr("Id")
 		var target_path = "xl/" + child.get_attr("Target") # Files in the xl directory
 		self._rid_to_path_dict[id] = target_path
+	
+	# 读取 rid 对应的图片
+	var rels_cellimages_xml_data = get_xml_file(FilePaths.RELS_CELL_IMAGES)
+	var rid_to_images = {}
+	for child in rels_cellimages_xml_data.get_root().get_children():
+		var rid = child.get_attr("Id")
+		var path = child.get_attr("Target")
+		rid_to_images[rid] = zip_reader.read_file("xl".path_join(path))
+	var cellimages_xml_file = get_xml_file(FilePaths.CELL_IMAGES)
+	for child in cellimages_xml_file.get_root().get_children():
+		# 名称
+		var xdr_pic = child.get_child(0)
+		var xdr_nv_pic_pr = xdr_pic.find_first_node("xdr:nvPicPr")
+		var xdr_cNvPr = xdr_nv_pic_pr.find_first_node("xdr:cNvPr")
+		var name = xdr_cNvPr.get_attr("name")
+		# rid
+		var xdr_blip_fill = xdr_pic.find_first_node("xdr:blipFill")
+		var a_blip = xdr_blip_fill.find_first_node("a:blip")
+		var rid = a_blip.get_attr("r:embed")
+		# 记录
+		var image = Image.new()
+		image.load_png_from_buffer(PackedByteArray(rid_to_images[rid]))
+		cellimages[name] = ImageTexture.create_from_image(image)
 	
 	# 数值格式化
 	var xml_file = get_xml_file(FilePaths.STYLES)
@@ -366,7 +362,8 @@ func create_sheet(sheet_name: String, data: Dictionary = {}) -> ExcelSheet:
 	add_changed_file(FilePaths.WORKBOOK)
 	
 	# TODO _rid_to_path_dict 等内容都需要更新数据
-	
+	_rels_workbook
+	_rid_to_path_dict
 	
 	
 	return get_sheet(sheet_name)
@@ -375,6 +372,7 @@ func create_sheet(sheet_name: String, data: Dictionary = {}) -> ExcelSheet:
 ## 获取共享字符串
 func get_shared_string(idx: int) -> String:
 	return shared_strings[idx]
+
 
 ## 表达式值转为图片
 func convert_image(value: String):
