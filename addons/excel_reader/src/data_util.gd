@@ -156,17 +156,24 @@ static func to_coords(r: String) -> Vector2i:
 	var result = _COLUMN_ROW_REGEX.search(r)
 	var column_str = result.get_string(1)
 	var row_str = result.get_string(2)
-	
+	return Vector2i( 
+		convert_26_to_10_base(column_str), 
+		row_str.to_int()
+	)
+
+
+## 26 进制转为 10 进制
+static func convert_26_to_10_base(base_26: String) -> int:
 	var column : int = 0
-	var column_length : int = column_str.length()
+	var column_length : int = base_26.length()
 	for i in column_length:
-		var num = (column_str.unicode_at(i) - 64)
+		var num = (base_26.unicode_at(i) - 64)
 		column += num * pow(26, column_length - 1 - i)
-	return Vector2i(column, row_str.to_int())
+	return column
 
 
-# 转为 26 进制
-static func to_26_base(dividend: int) -> String:
+# 10 进制转为 26 进制
+static func convert_10_to_26_base(dividend: int) -> String:
 	const BASE = 26
 	if dividend == 0:
 		return "@"
@@ -252,7 +259,7 @@ static func add_node_by_data(
 			min_column = min(min_column, column)
 			max_column = max(max_column, column)
 			# 位置属性
-			var r = "%s%s" % [ to_26_base( column ), row ]
+			var r = "%s%s" % [ convert_10_to_26_base( column ), row ]
 			var column_node : ExcelXMLNode = column_to_node_dict.get(column) 
 			if column_node == null:
 				column_node = ExcelXMLNode.create("c", false, {

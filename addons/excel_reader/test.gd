@@ -8,26 +8,15 @@
 @tool
 extends EditorScript
 
-static func to_26_base(num: int):
-	var result = []
-	var last : int = num
-	while last > 0:
-		var quotient : int = last / 26
-		result.append(char((last % 26) + 64))
-		last = quotient
-	result.reverse()
-	return "".join(result)
-
 
 func _run():
 	
-	print(ExcelDataUtil.to_26_base(27))
-	
-	return
-	
 	var excel = ExcelFile.open_file("D:\\Downloads\\test_.xlsx")
 	
-	#var workbook = excel.get_workbook()
+	var workbook = excel.get_workbook()
+	var sheet = workbook.get_sheet("Sheet1") as ExcelSheet
+	#print( JSON.stringify(sheet.get_table_data(), "\t") )
+	
 	#var cell_images_xml_file = workbook.get_xml_file("xl/cellimages.xml")
 	#var etc_cell_images_node = cell_images_xml_file.get_root()
 	#var xdr_pic = etc_cell_images_node.find_first_node_by_path("etc:cellImage/xdr:pic")
@@ -35,9 +24,11 @@ func _run():
 		#print(node.get_type())
 	#return
 	
-	var workbook = excel.get_workbook()
-	var sheet = workbook.get_sheet("Sheet1") as ExcelSheet
-	#print( JSON.stringify(sheet.get_table_data(), "\t") )
+	var rels_workbook = workbook.get_xml_file(ExcelWorkbook.FilePaths.RELS_WORKBOOK)
+	print( rels_workbook.to_xml() )
+	
+	
+	return
 	
 	sheet.alter(5, 5, 10)
 	#print( JSON.stringify(sheet.get_table_data(), "\t") )

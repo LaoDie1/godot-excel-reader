@@ -165,7 +165,7 @@ func alter(row: int, column: int, value) -> void:
 		
 		# 新数据的单元格
 		column_node = ExcelXMLNode.create("c", false)
-		var column_r = ExcelDataUtil.to_26_base(column) + row_node.get_attr(ExcelDataUtil.PropertyName.COLUMN_ROW) # 单元格坐标位置
+		var column_r = ExcelDataUtil.convert_10_to_26_base(column) + row_node.get_attr(ExcelDataUtil.PropertyName.COLUMN_ROW) # 单元格坐标位置
 		column_node.set_attr(ExcelDataUtil.PropertyName.COLUMN_ROW, column_r)
 		row_node.add_child(column_node)
 		
@@ -187,8 +187,8 @@ func alter(row: int, column: int, value) -> void:
 		to.x = max(to.x, column)
 		to.y = max(to.y, row)
 		dimension_node.set_attr("ref", "%s%s:%s%s" % [ 
-			ExcelDataUtil.to_26_base(from.x), from.y,
-			ExcelDataUtil.to_26_base(to.x), to.y,
+			ExcelDataUtil.convert_10_to_26_base(from.x), from.y,
+			ExcelDataUtil.convert_10_to_26_base(to.x), to.y,
 		] )
 	
 	# 修改值
