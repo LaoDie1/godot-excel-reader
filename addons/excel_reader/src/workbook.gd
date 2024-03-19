@@ -162,16 +162,14 @@ func get_sheet(idx_or_name) -> ExcelSheet:
 ## 创建新的 Sheet
 func create_new_sheet(sheet_name: String, data: Dictionary = {}) -> ExcelSheet:
 	# 文件路径
-	var xml_path = "xl/worksheets/" + str(sheet_name) + ".xml"
+	var sheet_id : int = xl_workbook.get_new_id()
+	var xml_path : String = "xl/worksheets/sheet%d.xml" % sheet_id
 	assert(not _path_to_sheet_dict.has(xml_path), "不能创建重复的xml")
 	
-	# 内容类型
-	xl_content_types.add_new_sheet(xml_path)
-	
 	# workbook 记录这个文件
-	var sheet_rid = xl_workbook.add_sheet(sheet_name)
+	var sheet_rid : String = xl_workbook.add_sheet(sheet_id, sheet_name)
 	# 创建 Sheet 节点
-	var sheet_xml_node = xl_workbook.create_sheet(sheet_rid, xml_path, sheet_name, data)
+	var sheet_xml_node = xl_workbook.create_sheet(sheet_id, sheet_rid, xml_path, sheet_name, data)
 	# Workbook XML 文件关系
 	xl_rels_workbook.add_relationship(ExcelDataUtil.FileType.WORKSHEET, sheet_rid, xml_path)
 	
@@ -180,6 +178,9 @@ func create_new_sheet(sheet_name: String, data: Dictionary = {}) -> ExcelSheet:
 	var sheet_xml_file : ExcelXMLFile = ExcelXMLFile.new(self, xml_path, sheet_file_bytes)
 	_path_to_xml_file_cache[xml_path] = sheet_xml_file
 	add_changed_file(xml_path)
+	
+	# 内容类型
+	xl_content_types.add_file(ExcelDataUtil.ContentType.WORKSHEET, xml_path)
 	
 	# ExcelSheet 对象
 	var sheet = ExcelSheet.new(self, sheet_xml_file)

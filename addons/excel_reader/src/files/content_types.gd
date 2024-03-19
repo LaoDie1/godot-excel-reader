@@ -17,10 +17,10 @@ func _init_data():
 	pass
 
 
-func add_new_sheet(xml_path: String) -> void:
+func add_file(content_type: String, xml_path: String) -> void:
 	var new_override = ExcelXMLNode.create("Override", true, {
 		"PartName": xml_path,
-		"ContentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml",
+		"ContentType": content_type,
 	})
 	xml_file.get_root().add_child(new_override)
 	notify_change()

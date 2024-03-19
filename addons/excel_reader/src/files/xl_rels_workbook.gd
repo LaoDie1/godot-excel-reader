@@ -11,7 +11,6 @@ extends ExcelXlBase
 
 
 var _data_list : Array[Dictionary] = []
-var _name_to_path_dict : Dictionary = {}
 var _rid_to_path_dict : Dictionary = {}
 
 
@@ -27,9 +26,23 @@ func _get_xl_path() -> String:
 	return "xl/_rels/workbook.xml.rels"
 
 
+func record_path(rid: String, path: String) -> void:
+	# 文件是有顺序的，末尾的必须都是 sheet 类型的文件，否则有的文件读取不出来
+	if _rid_to_path_dict.has(rid):
+		var new_rid_to_path_dict : Dictionary = {}
+		# 数据向后偏移
+		var id : int = int(rid)
+		for k in _rid_to_path_dict:
+			var k_id : int = int(k)
+			if k_id >= id: # 这个 key 比参数 rid 大
+				new_rid_to_path_dict["rId%d" % (k_id + 1)] = _rid_to_path_dict[k]
+		_rid_to_path_dict = new_rid_to_path_dict
+	_rid_to_path_dict[rid] = "xl".path_join(path)
+
+
 ## 添加关系。返回这个关系的 ID
 ##[br]这个 file_path 必须是完整的路径
-func add_relationship(type: String, id: String, file_path: String) -> String:
+func add_relationship(type: String, rid: String, file_path: String) -> String:
 	if file_path.begins_with("xl/"):
 		file_path = file_path.substr(3)
 	elif file_path.begins_with("/xl/"):
@@ -37,14 +50,19 @@ func add_relationship(type: String, id: String, file_path: String) -> String:
 	else:
 		assert(false)
 	
+	# 添加节点
 	var relationship = ExcelXMLNode.create("Relationship", true, {
-		"Id": id,
+		"Id": rid,
 		"Type": type,
 		"Target": file_path,
 	})
 	xml_file.get_root().add_child_to(relationship, 0)
+	
+	# 记录
+	record_path(rid, file_path)
+	
 	notify_change()
-	return id
+	return rid
 
 
 ## 获取这个 ID 的文件的路径

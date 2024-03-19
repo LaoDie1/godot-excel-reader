@@ -19,17 +19,22 @@ func _init_data():
 	var root = xml_file.get_root()
 	var sheets = root.find_first_node("sheets")
 	for child in sheets.get_children():
-		var xml_path : String = workbook.xl_rels_workbook.get_path_by_id(child.get_attr("r:id"))
-		_sheet_data_list.append({
-			"name": child.get_attr("name"),
-			"sheetId": child.get_attr("sheetId"),
-			"r:id": child.get_attr("r:id"),
-		})
+		_record_sheet_data(child)
 
 
 #@override
 func _get_xl_path():
 	return "xl/workbook.xml"
+
+
+func _record_sheet_data(sheet_node: ExcelXMLNode) -> void:
+	#var xml_path : String = workbook.xl_rels_workbook.get_path_by_id(child.get_attr("r:id"))
+	_sheet_data_list.append({
+		"name": sheet_node.get_attr("name"),
+		"sheetId": sheet_node.get_attr("sheetId"),
+		"r:id": sheet_node.get_attr("r:id"),
+	})
+
 
 func get_sheet_data_list() -> Array[Dictionary]:
 	return _sheet_data_list
@@ -40,32 +45,34 @@ func get_sheet_data_by_name(name: String) -> Dictionary:
 			return data
 	return {}
 
-
-## 添加 Sheet。返回这个 Sheet 的 rId
-func add_sheet(sheet_name: String) -> String:
-	var root = xml_file.get_root()
-	var sheets = root.find_first_node("sheets")
-	
+func get_new_id() -> int:
 	var max_id : int = 0
 	for sheet_data in _sheet_data_list:
 		if max_id < int(sheet_data["sheetId"]):
 			max_id = int(sheet_data["sheetId"])
-	
-	var sheet_id : int = max_id + 1
+	return max_id + 1
+
+
+## 添加 Sheet。返回这个 Sheet 的 rId
+func add_sheet(sheet_id: int, sheet_name: String) -> String:
 	var r_id : String = "rId%d" % sheet_id
 	var sheet = ExcelXMLNode.create("sheet", true, {
 		"name": sheet_name,
 		"sheetId": sheet_id,
 		"r:id": r_id,
 	})
+	var root = xml_file.get_root()
+	var sheets = root.find_first_node("sheets")
 	sheets.add_child(sheet)
-	notify_change()
 	
+	_record_sheet_data(sheet)
+	
+	notify_change()
 	return r_id
 
 
 ## 创建新的 Sheet
-func create_sheet(id: String, xml_path: String, sheet_name: String, data: Dictionary = {}) -> ExcelXMLNode:
+func create_sheet(sheet_id: int, sheet_rid: String, xml_path: String, sheet_name: String, data: Dictionary = {}) -> ExcelXMLNode:
 	# 根节点
 	var worksheet : ExcelXMLNode = ExcelXMLNode.create("worksheet", false, {
 		"xmlns": "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
@@ -80,12 +87,33 @@ func create_sheet(id: String, xml_path: String, sheet_name: String, data: Dictio
 	var sheet_pr = ExcelXMLNode.create("sheetPr", true)
 	worksheet.add_child(sheet_pr)
 	
+	# 获取非空数据
+	if not data.is_empty():
+		var new_data : Dictionary = {}
+		for row in data:
+			if not data[row].is_empty():
+				new_data[row] = data[row]
+		data = new_data
+	
 	# 有效范围
-	var dimension = ExcelXMLNode.create("dimension", true)
-	dimension.set_attr("ref", "A1:A1")
+	var min_coords : Vector2i = Vector2i(1,1)
+	if not data.is_empty():
+		var first_row = data.keys()[0]
+		min_coords.y = first_row
+		min_coords.x = data[first_row].values()[0]
+	var max_coords : Vector2i = Vector2i(1,1)
+	for row in data:
+		max_coords.y = max(max_coords.y, row)
+		min_coords.y = min(min_coords.y, row)
+		for column in data[row]:
+			max_coords.x = max(max_coords.x, column)
+			min_coords.x = min(min_coords.x, column)
+	var dimension : ExcelXMLNode = ExcelXMLNode.create("dimension", true)
+	var ref : String = ExcelDataUtil.to_dimension(Rect2i( min_coords, max_coords - min_coords))
+	dimension.set_attr("ref", ref)
 	worksheet.add_child(dimension)
 	
-	# 选中范围
+	# 可见区域选中范围
 	var sheetViews = ExcelXMLNode.create("sheetViews", false)
 	var sheetView = ExcelXMLNode.create("sheetView", false)
 	sheetView.set_attr("tabSelected", 1)
@@ -98,27 +126,24 @@ func create_sheet(id: String, xml_path: String, sheet_name: String, data: Dictio
 	worksheet.add_child(sheetViews)
 	
 	# 表单格式分界线
-	var sheetFormatPr = ExcelXMLNode.create("sheetFormatPr", true)
-	sheetFormatPr.set_attr("defaultColWidth", 8.88888888888889)
-	sheetFormatPr.set_attr("defaultRowHeight", 14.4)
+	var sheetFormatPr = ExcelXMLNode.create("sheetFormatPr", true, {
+		"defaultColWidth": 9,
+		"defaultRowHeight": 13.5,
+		"outlineLevelCol": 1,
+	})
 	worksheet.add_child(sheetFormatPr)
-	
-	# 列宽
-	var cols = ExcelXMLNode.create("cols", false)
-	worksheet.add_child(cols)
 	
 	# 表单数据
 	var sheetData = ExcelXMLNode.create("sheetData", false)
-	var row = ExcelXMLNode.create("row", false, {
-		"r": 1,
-		"spans": "1:1",
-	})
-	sheetData.add_child(row)
 	worksheet.add_child(sheetData)
-	
-	# 添加这个 Sheet 的数据
 	if not data.is_empty():
 		ExcelDataUtil.add_node_by_data(workbook, sheetData, data)
+	else:
+		var row = ExcelXMLNode.create("row", false, {
+			"r": 1,
+			"spans": "1:1",
+		})
+		sheetData.add_child(row)
 	
 	# 其他
 	worksheet.add_child(ExcelXMLNode.create("pageMargins", true, {
@@ -130,15 +155,6 @@ func create_sheet(id: String, xml_path: String, sheet_name: String, data: Dictio
 		"footer": "0.5",
 	}))
 	worksheet.add_child(ExcelXMLNode.create("headerFooter", true))
-	
-	# workbook
-	var sheets = get_xml_file().get_root().find_first_node("sheets")
-	var sheet = ExcelXMLNode.create("sheet", true, {
-		"name": sheet_name,
-		"sheetId": 2,
-		"r:id": id,
-	})
-	sheets.add_child(sheet)
 	
 	notify_change()
 	

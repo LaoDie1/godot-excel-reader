@@ -57,11 +57,12 @@ func to_xml(format: bool = false) -> String:
 ##[/codeblock]
 func get_table_data() -> Dictionary:
 	if not has_meta(MetaKey.TABLE_DATA):
-		var row_to_column_data = {}
-		var root = get_xml_root()
-		var sheet_data_node = root.find_first_node("sheetData")
+		var row_to_column_data : Dictionary = {}
+		var sheet_data : ExcelXMLNode = xml_file \
+			.get_root() \
+			.find_first_node("sheetData")
 		
-		for row_node in sheet_data_node.get_children():
+		for row_node in sheet_data.get_children():
 			var column_to_data : Dictionary = {}
 			for column_node in row_node.get_children():
 				var value_node = column_node.get_child(0)
@@ -69,7 +70,7 @@ func get_table_data() -> Dictionary:
 					continue
 				var value = value_node.get_value()
 				# 所在行列坐标
-				var coords = ExcelDataUtil.to_coords(
+				var coords : Vector2i = ExcelDataUtil.to_coords(
 					column_node.get_attr(ExcelDataUtil.PropertyName.COLUMN_ROW)
 				)
 				# 判断数据类型
@@ -94,10 +95,10 @@ func get_table_data() -> Dictionary:
 
 func _get_row_node_dict() -> Dictionary:
 	if not has_meta(MetaKey.ROW_NODE_DICT):
-		var xml_node_dict = {}
-		var sheet_data_node = get_xml_root().find_first_node("sheetData")
-		for row_node in sheet_data_node.get_children():
-			var row = int(row_node.get_attr(ExcelDataUtil.PropertyName.COLUMN_ROW))
+		var xml_node_dict : Dictionary = {}
+		var sheet_data : ExcelXMLNode = xml_file.get_root().find_first_node("sheetData")
+		for row_node in sheet_data.get_children():
+			var row : int = int(row_node.get_attr(ExcelDataUtil.PropertyName.COLUMN_ROW))
 			xml_node_dict[row] = row_node
 		set_meta(MetaKey.ROW_NODE_DICT, xml_node_dict)
 	return get_meta(MetaKey.ROW_NODE_DICT)
@@ -105,16 +106,16 @@ func _get_row_node_dict() -> Dictionary:
 
 func _get_column_node_dict() -> Dictionary:
 	if not has_meta(MetaKey.COLUMN_NODE_DICT):
-		var xml_node_dict = {}
-		var row_node_dict = _get_row_node_dict()
+		var xml_node_dict : Dictionary = {}
+		var row_node_dict : Dictionary = _get_row_node_dict()
 		for row in row_node_dict:
-			var row_node = row_node_dict[row]
-			var columns = {}
+			var row_node : ExcelXMLNode = row_node_dict[row]
+			var columns : Dictionary = {}
 			for column_node in row_node.get_children():
-				var coord = ExcelDataUtil.to_coords( 
+				var coords : Vector2i = ExcelDataUtil.to_coords( 
 					column_node.get_attr(ExcelDataUtil.PropertyName.COLUMN_ROW) 
 				)
-				var column = coord.x
+				var column : int = coords.x
 				columns[column] = column_node
 			xml_node_dict[row] = columns
 		set_meta(MetaKey.COLUMN_NODE_DICT, xml_node_dict)
@@ -122,9 +123,9 @@ func _get_column_node_dict() -> Dictionary:
 
 
 func get_value(row: int, column: int):
-	var column_dict = _get_column_node_dict()
+	var column_dict : Dictionary = _get_column_node_dict()
 	if column_dict.has(row):
-		var columns = column_dict[row]
+		var columns : Dictionary = column_dict[row]
 		if columns.has(column):
 			var column_node = columns[column]
 			var value_node = column_node.find_first_node("v")
@@ -137,7 +138,7 @@ func alter(row: int, column: int, value) -> void:
 	assert(row > 0)
 	assert(column > 0)
 	
-	var column_node_dict = _get_column_node_dict()
+	var column_node_dict : Dictionary = _get_column_node_dict()
 	if (value is String and value == "") or typeof(value) == TYPE_NIL:
 		if column_node_dict.has(row):
 			column_node_dict[row].erase(column)
@@ -151,28 +152,29 @@ func alter(row: int, column: int, value) -> void:
 	if columns.has(column):
 		column_node = columns[column] as ExcelXMLNode
 	else:
-		var row_node_dict = _get_row_node_dict()
+		var row_node_dict : Dictionary= _get_row_node_dict()
 		var row_node : ExcelXMLNode
 		if not row_node_dict.has(row):
 			# 没有这一行，则新建
 			row_node = ExcelXMLNode.create("row", false)
 			row_node.set_attr(ExcelDataUtil.PropertyName.COLUMN_ROW, str(row))
-			var sheet_data_node = get_xml_root().find_first_node("sheetData")
+			var sheet_data = get_xml_root().find_first_node("sheetData")
 			row_node.set_attr("spans", "%s:%s" % [column, column])
 			# 按顺序添加
 			var row_index : int = 0
-			for child in sheet_data_node.get_children():
+			for child in sheet_data.get_children():
 				var child_row : int = int(child.get_attr("r"))
 				if child_row > row:
 					break
 				row_index += 1
-			sheet_data_node.add_child_to(row_node, row_index)
+			sheet_data.add_child_to(row_node, row_index)
 			row_node_dict[row] = row_node
 		row_node = row_node_dict[row]
 		
 		# 新数据的单元格
 		column_node = ExcelXMLNode.create("c", false)
-		var column_r = ExcelDataUtil.convert_10_to_26_base(column) + row_node.get_attr(ExcelDataUtil.PropertyName.COLUMN_ROW) # 单元格坐标位置
+		var column_r : String = ExcelDataUtil.to_26_base_by_10_base(column) \
+			+ row_node.get_attr(ExcelDataUtil.PropertyName.COLUMN_ROW) # 单元格坐标位置
 		column_node.set_attr(ExcelDataUtil.PropertyName.COLUMN_ROW, column_r)
 		# 要按顺序添加
 		var column_index : int = 0
@@ -202,8 +204,8 @@ func alter(row: int, column: int, value) -> void:
 		to.x = max(to.x, column)
 		to.y = max(to.y, row)
 		dimension_node.set_attr("ref", "%s%s:%s%s" % [ 
-			ExcelDataUtil.convert_10_to_26_base(from.x), from.y,
-			ExcelDataUtil.convert_10_to_26_base(to.x), to.y,
+			ExcelDataUtil.to_26_base_by_10_base(from.x), from.y,
+			ExcelDataUtil.to_26_base_by_10_base(to.x), to.y,
 		] )
 	
 	# 修改值

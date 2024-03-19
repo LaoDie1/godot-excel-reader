@@ -81,8 +81,5 @@ func get_xml_path() -> String:
 
 func to_xml(format: bool = true) -> String:
 	if _head != "":
-		if format:
-			return (_head + "\n") + _root.to_xml(0, format)
-		else:
-			return _head + _root.to_xml(0, format)
+		return (_head + "\n") + _root.to_xml(0, format)
 	return _root.to_xml(0, format)

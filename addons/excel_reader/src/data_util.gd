@@ -16,6 +16,10 @@ const FileType = {
 	CELL_IMAGE = "http://www.wps.cn/officeDocument/2020/cellImage",
 }
 
+const ContentType = {
+	WORKSHEET = "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml",
+}
+
 ## 数据类型
 const DataType = {
 	NUMBER = "", ## 没有类型的都为数值类型（待定）
@@ -166,13 +170,13 @@ static func to_coords(r: String) -> Vector2i:
 	var column_str = result.get_string(1)
 	var row_str = result.get_string(2)
 	return Vector2i( 
-		convert_26_to_10_base(column_str), 
+		to_10_base_by_26_base(column_str), 
 		row_str.to_int()
 	)
 
 
 ## 26 进制转为 10 进制
-static func convert_26_to_10_base(base_26: String) -> int:
+static func to_10_base_by_26_base(base_26: String) -> int:
 	var column : int = 0
 	var column_length : int = base_26.length()
 	for i in column_length:
@@ -182,7 +186,7 @@ static func convert_26_to_10_base(base_26: String) -> int:
 
 
 # 10 进制转为 26 进制
-static func convert_10_to_26_base(dividend: int) -> String:
+static func to_26_base_by_10_base(dividend: int) -> String:
 	const BASE = 26
 	if dividend == 0:
 		return "@"
@@ -218,6 +222,14 @@ static func get_spans(spans: String) -> Dictionary:
 	}
 
 
+## 有效范围
+static func to_dimension(rect: Rect2i) -> String:
+	return "%s%s:%s%s" % [
+		to_26_base_by_10_base(rect.position.x), rect.position.y,
+		to_26_base_by_10_base(rect.end.x), rect.end.y
+	]
+
+
 ## 根据数据添加节点
 static func add_node_by_data(
 	workbook: ExcelWorkbook, 
@@ -227,7 +239,7 @@ static func add_node_by_data(
 	if data.is_empty():
 		return
 	
-	# 原有的每行对应的列的数据
+	# 原来的“每行对应的列的数据”
 	var row_to_column_data : Dictionary = {}
 	for row_node in sheet_data_node.get_children():
 		var row : int = int(row_node.get_attr(PropertyName.COLUMN_ROW))
@@ -269,7 +281,7 @@ static func add_node_by_data(
 			min_column = min(min_column, column)
 			max_column = max(max_column, column)
 			# 位置属性
-			var r = "%s%s" % [ convert_10_to_26_base( column ), row ]
+			var r = "%s%s" % [ to_26_base_by_10_base( column ), row ]
 			var column_node : ExcelXMLNode = column_to_node_dict.get(column) 
 			if column_node == null:
 				column_node = ExcelXMLNode.create("c", false, {
