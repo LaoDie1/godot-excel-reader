@@ -3,10 +3,18 @@
 #============================================================
 # - author: zhangxuetu
 # - datetime: 2024-03-12 14:28:17
-# - version: 4.2
+# - version: 4.2.1
 #============================================================
 class_name ExcelDataUtil
 
+
+const FileType = {
+	WORKSHEET = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet",
+	THEME = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
+	STYLES = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles",
+	SHARED_STRINGS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings",
+	CELL_IMAGE = "http://www.wps.cn/officeDocument/2020/cellImage",
+}
 
 ## 数据类型
 const DataType = {
@@ -67,7 +75,7 @@ static func set_text(workbook: ExcelWorkbook, cell_node: ExcelXMLNode, value: St
 	cell_node.set_attr(PropertyName.DATA_TYPE, DataType.STRING)
 	
 	# 记录到字符串到缓存值列表
-	var string_idx = workbook.update_shared_string_xml(value)
+	var string_idx = workbook.xl_shared_string.update_shared_string_xml(value)
 	set_value(cell_node, string_idx)
 
 
@@ -123,7 +131,8 @@ static func set_image(
 	
 	# 生成一个 IMAGE 的 ID
 	var image_id = "ID_" % str(ResourceUID.create_id()).sha256_text().substr(32).to_upper()
-	var cell_images_xml_file = workbook.get_xml_file(ExcelWorkbook.FilePaths.CELL_IMAGES)
+	var cell_images_xml_file = workbook.get_xml_file(workbook.xl_cell_images._get_xl_path())
+	
 	var etc_cell_images_node = cell_images_xml_file.get_root()
 	var xdr_pic = etc_cell_images_node.find_first_node_by_path("etc:cellImage/xdr:pic")
 	var nv_pic_pr = xdr_pic.find_first_node_by_path("xdr:nvPicPr")
@@ -212,19 +221,17 @@ static func get_spans(spans: String) -> Dictionary:
 ## 根据数据添加节点
 static func add_node_by_data(
 	workbook: ExcelWorkbook, 
-	root: ExcelXMLNode, 
+	sheet_data_node: ExcelXMLNode, # sheet.xml 文件的 sheetData 节点
 	data: Dictionary,
 ):
 	if data.is_empty():
 		return
 	
-	var sheet_data_node = root.find_first_node("sheetData")
-	
 	# 原有的每行对应的列的数据
 	var row_to_column_data : Dictionary = {}
 	for row_node in sheet_data_node.get_children():
-		var row = int(row_node.get_attr(PropertyName.COLUMN_ROW))
-		var column_data = {
+		var row : int = int(row_node.get_attr(PropertyName.COLUMN_ROW))
+		var column_data : Dictionary = {
 			"row_node": row_node, # “这一行的每个列”对应的行节点
 		}
 		var coords : Vector2i
@@ -251,6 +258,9 @@ static func add_node_by_data(
 			row_node = ExcelXMLNode.create("row", false, {
 				PropertyName.COLUMN_ROW: row,
 			})
+			row_to_column_data[row] = {
+				"row_node": row_node,
+			}
 		
 		# 添加列节点
 		var column_to_node_dict : Dictionary = row_to_column_data[row]
@@ -266,10 +276,10 @@ static func add_node_by_data(
 					PropertyName.COLUMN_ROW: r,
 				})
 				row_node.add_child(column_node)
-			alter_value(null, column_node, column_data[column])
+			alter_value(workbook, column_node, column_data[column])
 		
 		row_node.set_attr("spans", "%s:%s" % [min_column, max_column])
-		root.add_child(row_node)
+		sheet_data_node.add_child(row_node)
 
 
 

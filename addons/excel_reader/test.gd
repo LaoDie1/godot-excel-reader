@@ -3,7 +3,7 @@
 #============================================================
 # - author: zhangxuetu
 # - datetime: 2023-05-27 19:06:07
-# - version: 4.0
+# - version: 4.2.1
 #============================================================
 @tool
 extends EditorScript
@@ -23,9 +23,6 @@ func _run():
 	#for node in xdr_pic.find_nodes_by_path("././a:./(a:.)"):
 		#print(node.get_type())
 	#return
-	
-	var rels_workbook = workbook.get_xml_file(ExcelWorkbook.FilePaths.RELS_WORKBOOK)
-	print( rels_workbook.to_xml() )
 	
 	
 	return

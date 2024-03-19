@@ -3,7 +3,7 @@
 #============================================================
 # - author: zhangxuetu
 # - datetime: 2023-05-27 21:51:59
-# - version: 4.0
+# - version: 4.2.1
 #============================================================
 ## 工作表
 ##
@@ -18,21 +18,17 @@ const MetaKey = {
 }
 
 var workbook : ExcelWorkbook
-var xml_file : ExcelXMLFile:
-	set(v):
-		assert(xml_file == null)
-		xml_file = v
+var xml_file : ExcelXMLFile
 
-var _xml_path : String
 var _image_regex : RegEx = RegEx.new()
 
 
 #============================================================
 #  内置 
 #============================================================
-func _init(workbook: ExcelWorkbook, sheet_xml_path: String):
+func _init(workbook: ExcelWorkbook, xml_file: ExcelXMLFile):
 	self.workbook = workbook
-	self.xml_file = workbook.get_xml_file(sheet_xml_path)
+	self.xml_file = xml_file
 	self._image_regex.compile("=DISPIMG\\(\"(?<rid>\\w+)\",\\d+\\)")
 
 
@@ -47,7 +43,10 @@ func get_xml_root() -> ExcelXMLNode:
 	return xml_file.get_root()
 
 func get_xml_path() -> String:
-	return _xml_path
+	return xml_file.get_xml_path()
+
+func to_xml(format: bool = false) -> String:
+	return xml_file.get_root().to_xml(0, format)
 
 
 ## 获取表单中的数据。示例：
@@ -59,7 +58,8 @@ func get_xml_path() -> String:
 func get_table_data() -> Dictionary:
 	if not has_meta(MetaKey.TABLE_DATA):
 		var row_to_column_data = {}
-		var sheet_data_node = get_xml_root().find_first_node("sheetData")
+		var root = get_xml_root()
+		var sheet_data_node = root.find_first_node("sheetData")
 		
 		for row_node in sheet_data_node.get_children():
 			var column_to_data : Dictionary = {}
@@ -159,7 +159,14 @@ func alter(row: int, column: int, value) -> void:
 			row_node.set_attr(ExcelDataUtil.PropertyName.COLUMN_ROW, str(row))
 			var sheet_data_node = get_xml_root().find_first_node("sheetData")
 			row_node.set_attr("spans", "%s:%s" % [column, column])
-			sheet_data_node.add_child(row_node)
+			# 按顺序添加
+			var row_index : int = 0
+			for child in sheet_data_node.get_children():
+				var child_row : int = int(child.get_attr("r"))
+				if child_row > row:
+					break
+				row_index += 1
+			sheet_data_node.add_child_to(row_node, row_index)
 			row_node_dict[row] = row_node
 		row_node = row_node_dict[row]
 		
@@ -167,7 +174,15 @@ func alter(row: int, column: int, value) -> void:
 		column_node = ExcelXMLNode.create("c", false)
 		var column_r = ExcelDataUtil.convert_10_to_26_base(column) + row_node.get_attr(ExcelDataUtil.PropertyName.COLUMN_ROW) # 单元格坐标位置
 		column_node.set_attr(ExcelDataUtil.PropertyName.COLUMN_ROW, column_r)
-		row_node.add_child(column_node)
+		# 要按顺序添加
+		var column_index : int = 0
+		for child in row_node.get_children():
+			var coords = ExcelDataUtil.to_coords(child.get_attr("r"))
+			var node_idx = coords.x
+			if coords.x > column:
+				break
+			column_index += 1
+		row_node.add_child_to(column_node, column_index)
 		
 		# 更新 row 的 spans 值
 		var spans = ExcelDataUtil.get_spans(row_node.get_attr("spans"))
@@ -194,9 +209,10 @@ func alter(row: int, column: int, value) -> void:
 	# 修改值
 	ExcelDataUtil.alter_value(workbook, column_node, value)
 	
+	# 移除元数据。下次 get_table_data() 时重新生成数据
 	remove_meta(MetaKey.TABLE_DATA)
 	
 	# 调用过这个方法的 xml 路径都会记录到 workbook 中
 	# 保存时自动更新数据
-	workbook.add_changed_file(xml_file.get_xml_path())
+	workbook.add_changed_file( get_xml_path() )
 

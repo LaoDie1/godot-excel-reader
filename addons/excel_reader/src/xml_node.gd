@@ -3,7 +3,7 @@
 #============================================================
 # - author: zhangxuetu
 # - datetime: 2023-05-27 21:52:09
-# - version: 4.0
+# - version: 4.2.1
 #============================================================
 class_name ExcelXMLNode
 
@@ -97,8 +97,17 @@ func get_type() -> String:
 func get_parent() -> ExcelXMLNode:
 	return _parent
 
-func get_attr(property):
-	return _attributes.get(property, "")
+func get_attr(property: String, default = ""):
+	return _attributes.get(property, default)
+
+func get_attr_map_by_props(propertys: Array) -> Dictionary:
+	var dict : Dictionary = {}
+	for property in propertys:
+		dict[property] = _attributes.get(property, "")
+	return dict
+
+func get_attr_map() -> Dictionary:
+	return _attributes
 
 func has_attr(property) -> bool:
 	return _attributes.has(property)
