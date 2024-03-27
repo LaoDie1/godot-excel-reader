@@ -11,10 +11,10 @@ config_version=5
 [application]
 
 config/name="godot-excel-reader"
-config/features=PackedStringArray("4.2", "Forward Plus")
+config/features=PackedStringArray("4.3", "Forward Plus")
 run/low_processor_mode=true
 config/icon="res://icon.svg"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/bottom_file_manage/plugin.cfg", "res://addons/excel_reader/plugin.cfg", "res://addons/script_comment_menu/plugin.cfg")
+enabled=PackedStringArray("res://addons/excel_reader/plugin.cfg")

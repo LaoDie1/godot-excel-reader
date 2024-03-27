@@ -36,11 +36,25 @@ func _init_data():
 		}) 
 	
 	# 加载图片数据
+	var _image_loader = func(image_path:String, _buffer:PackedByteArray):
+		var image = Image.new()
+		var extension = image_path.get_extension().to_lower()
+		match extension:
+			"png":image.load_png_from_buffer(_buffer)
+			"jpg","jpeg":image.load_jpg_from_buffer(_buffer)
+			"svg":image.load_svg_from_buffer(_buffer)
+			"bmp":image.load_bmp_from_buffer(_buffer)
+			"tga":image.load_tga_from_buffer(_buffer)
+			"ktx":image.load_ktx_from_buffer(_buffer)
+			"webp":image.load_webp_from_buffer(_buffer)
+			_: push_error("not supported image type:",image_path)
+		if not image.is_empty():
+			return ImageTexture.create_from_image(image)
+	
+		
 	for data in data_list:
 		var image_path = workbook.xl_rels_cell_images.get_image_path_by_rid(data["rid"])
-		var image = Image.new()
-		image.load_png_from_buffer(workbook.read_file(image_path))
-		id_name_to_texture_dict[ data["name"] ] = ImageTexture.create_from_image(image)
+		id_name_to_texture_dict[ data["name"] ] = _image_loader.call(image_path, workbook.read_file(image_path))
 	
 	# 读取 rid 对应的图片
 	for child in get_xml_file().get_root().get_children():
@@ -55,9 +69,7 @@ func _init_data():
 		var rid = a_blip.get_attr("r:embed")
 		# 记录
 		var image_path = workbook.xl_rels_cell_images.get_image_path_by_rid(rid)
-		var image = Image.new()
-		image.load_png_from_buffer(workbook.read_file(image_path))
-		id_name_to_texture_dict[name] = ImageTexture.create_from_image(image)
+		id_name_to_texture_dict[name] = _image_loader.call(image_path, workbook.read_file(image_path))
 
 
 func get_image_by_id(id: String) -> ImageTexture:
