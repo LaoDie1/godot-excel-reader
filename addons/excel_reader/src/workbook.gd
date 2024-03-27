@@ -122,10 +122,9 @@ func add_changed_file(path: String):
 ## 获取这个 Sheet 名称的 xml 文件路径
 func get_path_by_sheet_name(sheet_name: String) -> String:
 	var sheet_data = xl_workbook.get_sheet_data_by_name(sheet_name)
-	var rid = sheet_data["r:id"]
+	var rid = sheet_data.get("r:id", "")
 	var path = xl_rels_workbook.get_path_by_id(rid)
 	return path
-
 
 func get_sheets() -> Array[ExcelSheet]:
 	if _path_to_sheet_dict.is_empty():
@@ -146,7 +145,7 @@ func get_sheet(idx_or_name) -> ExcelSheet:
 		else get_path_by_sheet_name(idx_or_name)
 	if not xml_path.ends_with(".xml"):
 		xml_path += ".xml"
-	
+
 	# 没有这个 sheet 路径
 	if not get_sheet_files().has(xml_path):
 		printerr("没有这个文件：", xml_path)
@@ -199,7 +198,9 @@ func get_shared_string(idx: int) -> String:
 
 
 func get_sheet_files() -> Array[String]:
-	return xl_rels_workbook.get_sheet_files()
+	var files := xl_rels_workbook.get_sheet_files()
+	files.reverse() # bug？ 可能是个Bug，列表的顺序反了所以revers一下
+	return files
 
 
 ## 表达式值转为图片。如果没有这张图片，则返回原数据
