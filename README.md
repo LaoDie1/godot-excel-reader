@@ -18,6 +18,19 @@ Reading excel files.
 
 ## Example
 
+对导入的数据进行读取
+
+```gdscript
+#var excel_data = load(xlsx_path) as ExcelFileData
+var excel_data = ExcelFileData.load(xlsx_path)
+var sheet_data = excel_data.get_sheet_data("Sheet1")
+print(JSON.stringify(table_data, "\t"))
+```
+
+---
+
+对 ExcelFile 源文件进行读取
+
 ```gdscript
 var excel = ExcelFile.open_file("xlsx file path")
 var workbook = excel.get_workbook()
