@@ -15,6 +15,10 @@ extends Resource
 @export var data : Dictionary = {}
 
 
+static func load_excel(path: String) -> ExcelFileData:
+	return load(path) as ExcelFileData
+
+
 func _to_string() -> String:
 	return "<ExcelFileData#%d>" % get_instance_id()
 
