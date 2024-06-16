@@ -90,5 +90,3 @@ func get_sheet_files() -> Array[String]:
 		if data["Type"] == ExcelDataUtil.FileType.WORKSHEET:
 			list.append("xl/" + data["Target"])
 	return list
-
-

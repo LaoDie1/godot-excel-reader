@@ -44,5 +44,3 @@ func to_xml(format: bool = false):
 ## 通知发生了改变
 func notify_change() -> void:
 	workbook.add_changed_file( _get_xl_path() )
-
-

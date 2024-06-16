@@ -292,6 +292,3 @@ static func add_node_by_data(
 		
 		row_node.set_attr("spans", "%s:%s" % [min_column, max_column])
 		sheet_data_node.add_child(row_node)
-
-
-

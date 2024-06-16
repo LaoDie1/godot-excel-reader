@@ -20,6 +20,9 @@ func _get_xl_path():
 
 func _init_data():
 	# 数据
+	if xml_file == null or xml_file.get_root() == null:
+		return
+	
 	for etc_cell_image in xml_file.get_root().get_children():
 		var xdr_pic = etc_cell_image.find_first_node("xdr:pic")
 		var xdr_nv_pic_pr = xdr_pic.find_first_node("xdr:nvPicPr")
@@ -74,5 +77,3 @@ func _init_data():
 
 func get_image_by_id(id: String) -> ImageTexture:
 	return id_name_to_texture_dict.get(id)
-
-

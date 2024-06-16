@@ -19,6 +19,9 @@ func _get_xl_path():
 
 
 func _init_data():
+	if xml_file == null or xml_file.get_root() == null:
+		return
+	
 	for child in xml_file.get_root().get_children():
 		var rid = child.get_attr("Id")
 		var image_path = child.get_attr("Target")
@@ -55,4 +58,3 @@ func add_image(image_path: String) -> String:
 ## 获取这个 rid 的图片路径
 func get_image_path_by_rid(rid:String) -> String:
 	return rid_to_image_path[rid]
-

@@ -24,4 +24,3 @@ func add_file(content_type: String, xml_path: String) -> void:
 	})
 	xml_file.get_root().add_child(new_override)
 	notify_change()
-

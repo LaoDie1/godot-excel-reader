@@ -1,0 +1,15 @@
+[remap]
+
+importer="zhangxuetu.excelreader"
+type="Resource"
+uid="uid://mnr68w54whr1"
+path="res://.godot/imported/test.xlsx-3ce1f0efdc0998f5cb79f5e75e35a256.res"
+
+[deps]
+
+source_file="res://addons/excel_reader/example/test.xlsx"
+dest_files=["res://.godot/imported/test.xlsx-3ce1f0efdc0998f5cb79f5e75e35a256.res"]
+
+[params]
+
+type="default"

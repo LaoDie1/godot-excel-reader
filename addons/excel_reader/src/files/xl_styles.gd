@@ -53,4 +53,3 @@ func get_format_by_num(num: int) -> String:
 	var cell_xfs_data : Dictionary = _num_to_style_dict[num]
 	var num_fmt_id : int = int(cell_xfs_data["numFmtId"])
 	return _num_to_format_code_dict[num_fmt_id]
-

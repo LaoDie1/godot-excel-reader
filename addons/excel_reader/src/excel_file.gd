@@ -97,5 +97,3 @@ func save(path: String = "") -> Error:
 	writer.close_file()
 	writer.close()
 	return OK
-
-

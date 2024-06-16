@@ -98,7 +98,10 @@ func get_files_bytes() -> Dictionary:
 func get_xml_file(path: String) -> ExcelXMLFile:
 	if not _path_to_xml_file_cache.has(path):
 		# 如果缓存中不存在，则从 ZIPReader 中读取数据
-		_path_to_xml_file_cache[path] = ExcelXMLFile.new(self, path, read_file(path))
+		var file_bytes = read_file(path)
+		if file_bytes.is_empty():
+			return null
+		_path_to_xml_file_cache[path] = ExcelXMLFile.new(self, path, file_bytes)
 	return _path_to_xml_file_cache[path]
 
 
@@ -109,7 +112,7 @@ func read_file(path: String) -> PackedByteArray:
 		# 如果这个文件发生了改变，则重新加载数据
 		var xml_file = get_xml_file(path)
 		update_file_data(xml_file, ExcelDataUtil.get_xml_file_data(xml_file))
-	return _path_to_file_bytes_cache[path]
+	return _path_to_file_bytes_cache.get(path, PackedByteArray())
 
 ## 更新这个文件的数据
 func update_file_data(path: String, data: PackedByteArray):
@@ -198,9 +201,16 @@ func get_shared_string(idx: int) -> String:
 
 
 func get_sheet_files() -> Array[String]:
-	var files := xl_rels_workbook.get_sheet_files()
+	var files = xl_rels_workbook.get_sheet_files()
 	files.reverse() # bug？ 可能是个Bug，列表的顺序反了所以revers一下
-	return files
+	return Array(files, TYPE_STRING, "", null)
+
+func get_sheet_name_list() -> Array[String]:
+	var list = xl_workbook.get_sheet_data_list().map(
+		func(data):
+			return data["name"]
+	)
+	return Array(list, TYPE_STRING, "", null)
 
 
 ## 表达式值转为图片。如果没有这张图片，则返回原数据
@@ -223,4 +233,3 @@ func format_value(cell_node: ExcelXMLNode):
 	#print("进行格式化：", " %-20s" % value, " %-4s" % format_idx, " ", format_code)
 	# TODO 编写格式化码
 	return value
-

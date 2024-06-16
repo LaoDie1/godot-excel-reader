@@ -217,4 +217,3 @@ func alter(row: int, column: int, value) -> void:
 	# 调用过这个方法的 xml 路径都会记录到 workbook 中
 	# 保存时自动更新数据
 	workbook.add_changed_file( get_xml_path() )
-
