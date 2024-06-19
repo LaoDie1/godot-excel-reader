@@ -5,6 +5,7 @@
 # - datetime: 2023-05-27 21:52:09
 # - version: 4.2.1
 #============================================================
+# TODO 修改为双向链表形式的结构
 class_name ExcelXMLNode
 
 
@@ -48,6 +49,9 @@ static func create(type: String, closure: bool, attributes: Dictionary = {}) -> 
 
 
 ## 转为 xml 格式
+##[br]
+##[br][code]indent[/code]  缩进字符数
+##[br][code]format[/code]  xml格式化输出
 func to_xml(indent: int = 0, format: bool = true) -> String:
 	# 参数
 	var params_list = []
@@ -209,7 +213,7 @@ func find_first_node_by_path(path: String) -> ExcelXMLNode:
 ##查找所有类型匹配的节点。示例：
 ##[codeblock]
 ###查找所有子节点下的所有 a: 开头类型的节点
-##var nodes = find_nodes_by_path(./a:.)
+##var nodes = ExcelXMLNode.find_nodes_by_path("./a:.")
 ##print(nodes)
 ##[/codeblock]
 ##以"/"进行切分每个层级的节点

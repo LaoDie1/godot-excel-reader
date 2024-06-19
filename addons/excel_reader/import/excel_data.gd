@@ -15,7 +15,7 @@ extends Resource
 @export var data : Dictionary = {}
 
 
-static func load_excel(path: String) -> ExcelFileData:
+static func load_file(path: String) -> ExcelFileData:
 	return load(path) as ExcelFileData
 
 

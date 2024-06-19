@@ -2,7 +2,7 @@
 
 # Godot Excel Reader
 
-[![Godot Engine 4.0.2](https://img.shields.io/badge/Godot%20Engine-4.0.2-blue)](https://godotengine.org/)
+[![Godot Engine 4.2.1](https://img.shields.io/badge/Godot%20Engine-4.0.2-blue)](https://godotengine.org/)
 [![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](https://lbesson.mit-license.org/)
 
 Reading excel files. 
@@ -18,16 +18,17 @@ Reading excel files.
 
 ## Example
 
-对导入的数据进行读取
+Load xlsx file data
 
 ```gdscript
 #var excel_data = load(xlsx_path) as ExcelFileData
-var excel_data = ExcelFileData.load(xlsx_path)
+var excel_data = ExcelFileData.load_file(xlsx_path)
 var sheet_data = excel_data.get_sheet_data("Sheet1")
 print(JSON.stringify(table_data, "\t"))
 ```
 
-> 对 ExcelFile 源文件进行读取
+
+> Read source file data:
 >
 > ```gdscript
 > var excel = ExcelFile.open_file("xlsx file path")

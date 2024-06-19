@@ -3,7 +3,7 @@
 #============================================================
 # - author: zhangxuetu
 # - datetime: 2023-07-19 20:10:42
-# - version: 4.0
+# - version: 4.2.1
 #============================================================
 @tool
 extends EditorImportPlugin
@@ -35,6 +35,9 @@ func _import(
 	gen_files: Array[String]
 ) -> Error:
 	var excel = ExcelFile.open_file(source_file, true)
+	if excel == null:
+		return FAILED
+		push_error("打开 xlsx 失败，这个文件可能正在被编辑")
 	var workbook = excel.get_workbook()
 	var file_to_data_dict : Dictionary = {}
 	var sheet_name_list : Array[String] = []

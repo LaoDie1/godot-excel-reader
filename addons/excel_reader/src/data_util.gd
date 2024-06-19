@@ -30,8 +30,8 @@ const DataType = {
 ## 属性名
 const PropertyName = {
 	COLUMN_ROW = "r", ## 所在行或列
-	DATA_TYPE = "t", ## 数据类型
-	CELL_FORMAT = "s", ## 单元格格式
+	DATA_TYPE = "t", ## 数据类型，对应到sharedStrings.xml中的sst元素
+	CELL_FORMAT = "s", ## 单元格格式，对应 style.xml
 }
 
 static var _COLUMN_ROW_REGEX: RegEx:

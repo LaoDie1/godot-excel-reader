@@ -8,6 +8,7 @@
 ## 工作表
 ##
 ##管理当前表中的数据
+## - 建议参考：https://www.cnblogs.com/wangmingshun/p/6654143.html
 class_name ExcelSheet
 
 
@@ -81,13 +82,18 @@ func get_table_data() -> Dictionary:
 						column_to_data[coords.x] = workbook.get_shared_string(value_idx)
 					
 					ExcelDataUtil.DataType.EXPRESSION:
-						column_to_data[coords.x] = workbook.convert_image(value)
+						var image = workbook.convert_image(value)
+						if image is Texture or image is Image:
+							column_to_data[coords.x] = image
+						else:
+							column_to_data[coords.x] = null
 					
 					ExcelDataUtil.DataType.NUMBER:
 						column_to_data[coords.x] = workbook.format_value(column_node)
 			
-			var row : int = int(row_node.get_attr(ExcelDataUtil.PropertyName.COLUMN_ROW))
-			row_to_column_data[row] = column_to_data
+			if not column_to_data.is_empty():
+				var row : int = int(row_node.get_attr(ExcelDataUtil.PropertyName.COLUMN_ROW))
+				row_to_column_data[row] = column_to_data
 		
 		set_meta(MetaKey.TABLE_DATA, row_to_column_data)
 	return get_meta(MetaKey.TABLE_DATA)
