@@ -23,7 +23,7 @@ Load xlsx file data
 ```gdscript
 #var excel_data = load(xlsx_path) as ExcelFileData
 var excel_data = ExcelFileData.load_file(xlsx_path)
-var sheet_data = excel_data.get_sheet_data("Sheet1")
+var table_data = excel_data.get_sheet_data("Sheet1")
 print(JSON.stringify(table_data, "\t"))
 ```
 
