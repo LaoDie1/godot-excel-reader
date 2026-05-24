@@ -2,14 +2,21 @@
 extends EditorPlugin
 
 
-const XlsxImport = preload("res://addons/excel_reader/import/xlsx_import.gd")
+const OriginDataImport = preload("uid://3pplq4gjy8et")
+const FormatDataImport = preload("uid://cplsmrwurvm65")
 
-var import_plugin: EditorImportPlugin
+var import_plugins: Array[EditorImportPlugin]
 
 func _enter_tree():
-	import_plugin = XlsxImport.new()
-	add_import_plugin(import_plugin)
+	for import_plugin in [
+		OriginDataImport.new(),
+		FormatDataImport.new(),
+	]:
+		add_import_plugin(import_plugin)
+		import_plugins.append(import_plugin)
+
 
 func _exit_tree():
-	remove_import_plugin(import_plugin)
-	import_plugin = null
+	for import_plugin in import_plugins:
+		remove_import_plugin(import_plugin)
+	import_plugins = []
