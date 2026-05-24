@@ -106,7 +106,7 @@ func read_file(path: String) -> PackedByteArray:
 		update_file_data(xml_file, ExcelDataUtil.get_xml_file_data(xml_file))
 	if _path_to_file_bytes_cache.has(path):
 		return _path_to_file_bytes_cache[path]
-	push_error("不存在 ", path, " 文件")
+	#push_error("不存在 ", path, " 文件")
 	return PackedByteArray()
 
 func get_file_bytes(path: String) -> PackedByteArray:
