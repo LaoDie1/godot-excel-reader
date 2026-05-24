@@ -56,7 +56,7 @@ func add_relationship(type: String, rid: String, file_path: String) -> String:
 		"Type": type,
 		"Target": file_path,
 	})
-	xml_file.get_root().add_child_to(relationship, 0)
+	xml_file.get_root().add_node_to(relationship, 0)
 	
 	# 记录
 	record_path(rid, file_path)

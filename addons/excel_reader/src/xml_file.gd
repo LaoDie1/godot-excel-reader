@@ -5,8 +5,8 @@
 # - datetime: 2023-05-27 21:52:06
 # - version: 4.2.1
 #============================================================
+## 这个 XML 文件相关的内容
 class_name ExcelXMLFile
-
 
 var workbook: ExcelWorkbook
 var xml_path: String
@@ -58,7 +58,7 @@ func _parse(parser: XMLParser) -> ExcelXMLNode:
 			match parser.get_node_type():
 				XMLParser.NODE_ELEMENT:
 					var child: ExcelXMLNode = _parse(parser)
-					ret.add_child(child)
+					ret.add_node(child)
 
 				XMLParser.NODE_ELEMENT_END:
 					if parser.get_node_name() != ret._type:

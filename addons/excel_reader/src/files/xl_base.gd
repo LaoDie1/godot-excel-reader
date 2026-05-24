@@ -5,6 +5,7 @@
 # - datetime: 2024-03-18 17:22:17
 # - version: 4.2.1
 #============================================================
+## 具有特定类别功能的 xl 文件对象的基类。
 class_name ExcelXlBase
 
 
@@ -12,9 +13,6 @@ var workbook : ExcelWorkbook
 var xml_file : ExcelXMLFile
 
 
-#============================================================
-#  内置
-#============================================================
 func _init(workbook: ExcelWorkbook, xml_path: String = ""):
 	self.workbook = workbook
 	if xml_path == "":
@@ -24,11 +22,8 @@ func _init(workbook: ExcelWorkbook, xml_path: String = ""):
 	_init_data()
 
 
-
-#============================================================
-#  自定义
-#============================================================
 func _init_data():
+	assert(false, "你需要重写 _init_data 方法处理这个文件的数据")
 	pass
 
 func _get_xl_path() -> String:

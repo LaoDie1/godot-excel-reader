@@ -77,9 +77,9 @@ func get_table_data() -> Dictionary:
 				# 判断数据类型
 				match ExcelDataUtil.get_data_type(column_node):
 					ExcelDataUtil.DataType.STRING:
-						var value_idx = int(value)
+						var value_idx := int(value)
 						# 如果是字符串，则进行转换
-						column_to_data[coords.x] = workbook.get_shared_string(value_idx)
+						column_to_data[coords.x] = workbook.xl_shared_string.get_shared_string(value_idx)
 					
 					ExcelDataUtil.DataType.EXPRESSION:
 						var image = workbook.convert_image(value)
@@ -173,7 +173,7 @@ func alter(row: int, column: int, value) -> void:
 				if child_row > row:
 					break
 				row_index += 1
-			sheet_data.add_child_to(row_node, row_index)
+			sheet_data.add_node_to(row_node, row_index)
 			row_node_dict[row] = row_node
 		row_node = row_node_dict[row]
 		
@@ -190,7 +190,7 @@ func alter(row: int, column: int, value) -> void:
 			if coords.x > column:
 				break
 			column_index += 1
-		row_node.add_child_to(column_node, column_index)
+		row_node.add_node_to(column_node, column_index)
 		
 		# 更新 row 的 spans 值
 		var spans = ExcelDataUtil.get_spans(row_node.get_attr("spans"))

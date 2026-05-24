@@ -34,13 +34,6 @@ const PropertyName = {
 	CELL_FORMAT = "s", ## 单元格格式，对应 style.xml
 }
 
-static var _COLUMN_ROW_REGEX: RegEx:
-	get:
-		if _COLUMN_ROW_REGEX == null:
-			_COLUMN_ROW_REGEX = RegEx.new()
-			_COLUMN_ROW_REGEX.compile("([A-Z]+)([0-9]+)")
-		return _COLUMN_ROW_REGEX
-
 
 ## 获取数据类型
 static func get_data_type(cell_node: ExcelXMLNode) -> String:
@@ -70,7 +63,7 @@ static func set_value(cell_node: ExcelXMLNode, value):
 	var v_node = cell_node.find_first_node("v")
 	if v_node == null:
 		v_node = ExcelXMLNode.create("v", false)
-		cell_node.add_child(v_node)
+		cell_node.add_node(v_node)
 	v_node.value = value
 
 
@@ -79,7 +72,7 @@ static func set_text(workbook: ExcelWorkbook, cell_node: ExcelXMLNode, value: St
 	cell_node.set_attr(PropertyName.DATA_TYPE, DataType.STRING)
 	
 	# 记录到字符串到缓存值列表
-	var string_idx = workbook.xl_shared_string.update_shared_string_xml(value)
+	var string_idx : int = workbook.xl_shared_string.update_shared_string_xml(value)
 	set_value(cell_node, string_idx)
 
 
@@ -138,8 +131,8 @@ static func set_image(
 	var cell_images_xml_file = workbook.get_xml_file(workbook.xl_cell_images._get_xl_path())
 	
 	var etc_cell_images_node = cell_images_xml_file.get_root()
-	var xdr_pic = etc_cell_images_node.find_first_node_by_path("etc:cellImage/xdr:pic")
-	var nv_pic_pr = xdr_pic.find_first_node_by_path("xdr:nvPicPr")
+	var xdr_pic = etc_cell_images_node.find_first_node_by_reg("etc:cellImage/xdr:pic")
+	var nv_pic_pr = xdr_pic.find_first_node_by_reg("xdr:nvPicPr")
 	
 	# 最大索引值
 	var last_idx = 0
@@ -155,14 +148,21 @@ static func set_image(
 	xdr_c_nv_pr.set_attr("id", last_idx + 1)
 	xdr_c_nv_pr.set_attr("name", image_id)
 	xdr_c_nv_pr.set_attr("descr", descr)
-	nv_pic_pr.add_child(xdr_c_nv_pr)
+	nv_pic_pr.add_node(xdr_c_nv_pr)
 	
 	# 创建节点
 	var f_node = ExcelXMLNode.create("f", false)
 	f_node.value = '_xlfn.DISPIMG("%s",1)' % image_id
-	cell_node.add_child(f_node)
+	cell_node.add_node(f_node)
 	set_value(cell_node, 'DISPIMG("%s",1)' % image_id)
 
+
+static var _COLUMN_ROW_REGEX: RegEx:
+	get:
+		if _COLUMN_ROW_REGEX == null:
+			_COLUMN_ROW_REGEX = RegEx.new()
+			_COLUMN_ROW_REGEX.compile("([A-Z]+)([0-9]+)")
+		return _COLUMN_ROW_REGEX
 
 ## r属性转为坐标
 static func to_coords(r: String) -> Vector2i:
@@ -287,8 +287,8 @@ static func add_node_by_data(
 				column_node = ExcelXMLNode.create("c", false, {
 					PropertyName.COLUMN_ROW: r,
 				})
-				row_node.add_child(column_node)
+				row_node.add_node(column_node)
 			alter_value(workbook, column_node, column_data[column])
 		
 		row_node.set_attr("spans", "%s:%s" % [min_column, max_column])
-		sheet_data_node.add_child(row_node)
+		sheet_data_node.add_node(row_node)

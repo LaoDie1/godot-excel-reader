@@ -5,7 +5,7 @@
 # - datetime: 2024-03-18 17:21:11
 # - version: 4.2.1
 #============================================================
-## 获取 Sheet 数据
+## 获取 Sheet 数据，创建新的 Sheet。
 class_name ExcelXlWorkbook
 extends ExcelXlBase
 
@@ -20,7 +20,6 @@ func _init_data():
 	var sheets = root.find_first_node("sheets")
 	for child in sheets.get_children():
 		_record_sheet_data(child)
-
 
 #@override
 func _get_xl_path():
@@ -63,7 +62,7 @@ func add_sheet(sheet_id: int, sheet_name: String) -> String:
 	})
 	var root = xml_file.get_root()
 	var sheets = root.find_first_node("sheets")
-	sheets.add_child(sheet)
+	sheets.add_node(sheet)
 	
 	_record_sheet_data(sheet)
 	
@@ -71,7 +70,7 @@ func add_sheet(sheet_id: int, sheet_name: String) -> String:
 	return r_id
 
 
-## 创建新的 Sheet
+## 创建新的 Sheet。需要保存 Excel 文件才能生效。
 func create_sheet(sheet_id: int, sheet_rid: String, xml_path: String, sheet_name: String, data: Dictionary = {}) -> ExcelXMLNode:
 	# 根节点
 	var worksheet : ExcelXMLNode = ExcelXMLNode.create("worksheet", false, {
@@ -85,7 +84,7 @@ func create_sheet(sheet_id: int, sheet_rid: String, xml_path: String, sheet_name
 	
 	# 表单分界线
 	var sheet_pr = ExcelXMLNode.create("sheetPr", true)
-	worksheet.add_child(sheet_pr)
+	worksheet.add_node(sheet_pr)
 	
 	# 获取非空数据
 	if not data.is_empty():
@@ -111,7 +110,7 @@ func create_sheet(sheet_id: int, sheet_rid: String, xml_path: String, sheet_name
 	var dimension : ExcelXMLNode = ExcelXMLNode.create("dimension", true)
 	var ref : String = ExcelDataUtil.to_dimension(Rect2i( min_coords, max_coords - min_coords))
 	dimension.set_attr("ref", ref)
-	worksheet.add_child(dimension)
+	worksheet.add_node(dimension)
 	
 	# 可见区域选中范围
 	var sheetViews = ExcelXMLNode.create("sheetViews", false)
@@ -121,9 +120,9 @@ func create_sheet(sheet_id: int, sheet_rid: String, xml_path: String, sheet_name
 	var selection = ExcelXMLNode.create("selection", true)
 	selection.set_attr("activeCell", "A1")
 	selection.set_attr("sqref", "A1")
-	sheetView.add_child(selection)
-	sheetViews.add_child(sheetView)
-	worksheet.add_child(sheetViews)
+	sheetView.add_node(selection)
+	sheetViews.add_node(sheetView)
+	worksheet.add_node(sheetViews)
 	
 	# 表单格式分界线
 	var sheetFormatPr = ExcelXMLNode.create("sheetFormatPr", true, {
@@ -131,22 +130,22 @@ func create_sheet(sheet_id: int, sheet_rid: String, xml_path: String, sheet_name
 		"defaultRowHeight": 13.5,
 		"outlineLevelCol": 1,
 	})
-	worksheet.add_child(sheetFormatPr)
+	worksheet.add_node(sheetFormatPr)
 	
 	# 表单数据
-	var sheetData = ExcelXMLNode.create("sheetData", false)
-	worksheet.add_child(sheetData)
+	var sheetData_node := ExcelXMLNode.create("sheetData", false)
+	worksheet.add_node(sheetData_node)
 	if not data.is_empty():
-		ExcelDataUtil.add_node_by_data(workbook, sheetData, data)
+		ExcelDataUtil.add_node_by_data(workbook, sheetData_node, data)
 	else:
 		var row = ExcelXMLNode.create("row", false, {
 			"r": 1,
 			"spans": "1:1",
 		})
-		sheetData.add_child(row)
+		sheetData_node.add_node(row)
 	
 	# 其他
-	worksheet.add_child(ExcelXMLNode.create("pageMargins", true, {
+	worksheet.add_node(ExcelXMLNode.create("pageMargins", true, {
 		"left": "0.75",
 		"right": "0.75",
 		"top": "1",
@@ -154,7 +153,7 @@ func create_sheet(sheet_id: int, sheet_rid: String, xml_path: String, sheet_name
 		"header": "0.5",
 		"footer": "0.5",
 	}))
-	worksheet.add_child(ExcelXMLNode.create("headerFooter", true))
+	worksheet.add_node(ExcelXMLNode.create("headerFooter", true))
 	
 	notify_change()
 	

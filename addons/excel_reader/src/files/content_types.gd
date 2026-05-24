@@ -22,5 +22,5 @@ func add_file(content_type: String, xml_path: String) -> void:
 		"PartName": xml_path,
 		"ContentType": content_type,
 	})
-	xml_file.get_root().add_child(new_override)
+	xml_file.get_root().add_node(new_override)
 	notify_change()

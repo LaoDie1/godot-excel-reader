@@ -48,7 +48,7 @@ func add_image(image_path: String) -> String:
 		"Type": "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
 		"Target": image_path,
 	})
-	xml_file.get_root().add_child(relationship)
+	xml_file.get_root().add_node(relationship)
 	
 	notify_change()
 	

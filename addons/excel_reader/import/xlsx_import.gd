@@ -36,8 +36,8 @@ func _import(
 ) -> Error:
 	var excel = ExcelFile.open_file(source_file, true)
 	if excel == null:
-		return FAILED
 		push_error("打开 xlsx 失败，这个文件可能正在被编辑")
+		return FAILED
 	var workbook = excel.get_workbook()
 	var file_to_data_dict : Dictionary = {}
 	var sheet_name_list : Array[String] = []

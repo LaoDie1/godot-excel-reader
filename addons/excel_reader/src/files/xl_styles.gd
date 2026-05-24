@@ -5,6 +5,7 @@
 # - datetime: 2024-03-19 13:07:02
 # - version: 4.2.1
 #============================================================
+## 单元格样式文件。TODO 处理返回格式化后的数据内容
 class_name ExcelXlStyle
 extends ExcelXlBase
 

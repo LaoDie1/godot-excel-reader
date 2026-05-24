@@ -22,14 +22,6 @@ var _path_to_xml_file_cache : Dictionary = {}
 var _changed_file_path_dict : Dictionary = {}
 # 路径对应的 ExcelSheet 对象
 var _path_to_sheet_dict : Dictionary = {}
-# 匹配表达式中的 ID 值
-var _image_regex : RegEx = null:
-	get:
-		if _image_regex == null:
-			_image_regex = RegEx.new()
-			_image_regex.compile("DISPIMG\\(\"(?<rid>\\w+)\",\\d+\\)")
-		return _image_regex
-
 
 # 内容类型
 var xl_content_types : ExcelContentTypes
@@ -112,7 +104,13 @@ func read_file(path: String) -> PackedByteArray:
 		# 如果这个文件发生了改变，则重新加载数据
 		var xml_file = get_xml_file(path)
 		update_file_data(xml_file, ExcelDataUtil.get_xml_file_data(xml_file))
-	return _path_to_file_bytes_cache.get(path, PackedByteArray())
+	if _path_to_file_bytes_cache.has(path):
+		return _path_to_file_bytes_cache[path]
+	push_error("不存在 ", path, " 文件")
+	return PackedByteArray()
+
+func get_file_bytes(path: String) -> PackedByteArray:
+	return read_file(path)
 
 ## 更新这个文件的数据
 func update_file_data(path: String, data: PackedByteArray):
@@ -151,7 +149,7 @@ func get_sheet(idx_or_name) -> ExcelSheet:
 
 	# 没有这个 sheet 路径
 	if not get_sheet_files().has(xml_path):
-		printerr("没有这个文件：", xml_path)
+		push_error("没有这个文件：", xml_path)
 		return null
 	
 	# 还没加载这个数据则进行加载
@@ -191,15 +189,6 @@ func create_new_sheet(sheet_name: String, data: Dictionary = {}) -> ExcelSheet:
 	return sheet
 
 
-## 更新共享的文字。返回这个字符串的索引
-func update_shared_string_xml(text: String) -> int:
-	return xl_shared_string.update_shared_string_xml(text)
-
-## 获取共享字符串
-func get_shared_string(idx: int) -> String:
-	return xl_shared_string.get_shared_string(idx)
-
-
 func get_sheet_files() -> Array[String]:
 	var files = xl_rels_workbook.get_sheet_files()
 	files.reverse() # bug？ 可能是个Bug，列表的顺序反了所以revers一下
@@ -213,8 +202,15 @@ func get_sheet_name_list() -> Array[String]:
 	return Array(list, TYPE_STRING, "", null)
 
 
+# 匹配表达式中的 ID 值
+var _image_regex : RegEx = null:
+	get:
+		if _image_regex == null:
+			_image_regex = RegEx.new()
+			_image_regex.compile("DISPIMG\\(\"(?<rid>[^\"]+)\",\\d+\\)")
+		return _image_regex
 ## 表达式值转为图片。如果没有这张图片，则返回原数据
-func convert_image(expression: String):
+func convert_image(expression: String) -> Variant:
 	# 嵌入单元格的图片表达式转为实际图片数据
 	var result = _image_regex.search(expression)
 	if result:

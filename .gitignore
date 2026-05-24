@@ -1,4 +1,6 @@
 # Godot 4+ specific ignores
 .godot/
 addons/script_comment_menu/
+addons/bottom_file_manage/
 test/
+images/

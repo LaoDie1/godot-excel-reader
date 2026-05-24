@@ -5,6 +5,8 @@
 # - datetime: 2024-03-19 00:22:14
 # - version: 4.2.1
 #============================================================
+# TODO 是否可以换成字典进行记录？
+## 共享使用的重复的字符串数据
 class_name ExcelXlSharedStrings
 extends ExcelXlBase
 
@@ -34,11 +36,11 @@ func update_shared_string_xml(text: String) -> int:
 		var si_node = ExcelXMLNode.create("si", false)
 		var t_node = ExcelXMLNode.create("t", false)
 		t_node.value = text
-		si_node.add_child(t_node)
+		si_node.add_node(t_node)
 		
 		# 更新属性
 		var sst_node = get_xml_file().get_root()
-		sst_node.add_child(si_node)
+		sst_node.add_node(si_node)
 		sst_node.set_attr("uniqueCount", _shared_strings.size())
 		sst_node.set_attr("count", int(sst_node.get_attr("count"))+1 )
 		
