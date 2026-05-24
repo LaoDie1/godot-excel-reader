@@ -43,7 +43,7 @@ func _init_data():
 		
 		var src_rect = xdr_blip_fill.find_first_node_by_reg("a:srcRect")
 		var xdr_spPr = xdr_pic.find_first_node("xdr:spPr")
-		if xdr_spPr:
+		if xdr_spPr and src_rect:
 			# 外框
 			var a_xfrm = xdr_spPr.find_first_node("a:xfrm") # Transform2D 属性
 			var a_off = a_xfrm.find_first_node("a:off") # 偏移坐标
