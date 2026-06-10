@@ -2,7 +2,7 @@
 
 # Godot Excel Reader
 
-[![Godot Engine 4.2.1](https://img.shields.io/badge/Godot%20Engine-4.0.2-blue)](https://godotengine.org/)
+[![Godot Engine 4.x](https://img.shields.io/badge/Godot%20Engine-4.5-blue)](https://godotengine.org/)
 [![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](https://lbesson.mit-license.org/)
 
 Reading excel files. 
@@ -21,8 +21,8 @@ Reading excel files.
 Load xlsx file data
 
 ```gdscript
-#var excel_data = load(xlsx_path) as ExcelFileData
-var excel_data = ExcelFileData.load_file(xlsx_path)
+var excel_data := load(xlsx_path) as ExcelFileData
+#var excel_data := ExcelFileData.load_file(xlsx_path)
 var table_data = excel_data.get_sheet_data("Sheet1")
 print(JSON.stringify(table_data, "\t"))
 for row in table_data:
