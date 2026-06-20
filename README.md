@@ -14,7 +14,17 @@ Reading excel files.
 
 ---
 
+The keys of the imported data by default are 1, 2, 3...
 
+![](images/2026-06-11_001810.png)
+
+ 
+
+The formatted data uses its row number as the key name.
+
+![](images/2026-06-11_0006233.png)
+
+---
 
 ## Example
 
